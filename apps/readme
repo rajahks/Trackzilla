@@ -1,8 +1,8 @@
 Create/Place all the apps that will be used in the application into this folder.
 
 Steps:
-1) Create a folder under the 'apps' folder with the name of the app
-    mkdir apps/<appName>
-2) Create the django app within this folder using docker-compose
-    sudo docker-compose run app python manage.py startapp <appName> apps/<appName>
-    Eg: sudo docker-compose run app python manage.py startapp testapp apps/testapp   #creates the testapp under the folder apps/testapp
+1) Create a folder under the 'apps' folder with the name of the app  
+    mkdir apps/<appName>  
+2) Create the django app within this folder using docker-compose  
+    sudo docker-compose run app python manage.py startapp <appName> apps/<appName>  
+    Eg: sudo docker-compose run app python manage.py startapp testapp apps/testapp   #creates the testapp under the folder apps/testapp  
