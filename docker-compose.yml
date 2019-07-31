@@ -1,0 +1,11 @@
+version: '3'
+services:
+        app:
+                build: . # Build using the Dockerfile present in the current dir
+                volumes:
+                        - .:/code
+                ports:
+                        - "8000:8000"
+                command: bash docker-entrypoint.sh #Run the startupscript which will make the migrations and run the dev server
+                
+                
