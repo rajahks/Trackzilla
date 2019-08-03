@@ -1,0 +1,26 @@
+All the logs sent by the logger calls will be written to 'debug.log' this folder.
+
+How to log in a file:
+----------------------------
+import logging
+
+logger = logging.getLogger(__name__)
+
+# A simple string logged at the "warning" level
+logger.warning("Your log message is here")
+
+# A string with a variable at the "info" level
+logger.info("The value of var is %s", var)
+----------------------------
+
+Levels:
+
+    debug: Info not needed for regular operation, but useful in development.
+    info: Info that's helpful during regular operation.
+    warning: Info that could be problematic, but is non-urgent.
+    error: Info that is important and likely requires prompt attention.
+    critical: If you need one higher than error, here it is
+------------------------------
+
+
+Tutorial: https://lincolnloop.com/blog/django-logging-right-way/

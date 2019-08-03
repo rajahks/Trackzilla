@@ -118,3 +118,41 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# LOGGING configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {filename} {funcName} {lineno} [ {message} ]',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'Logs/debug.log',
+            'formatter' : 'verbose',
+        },
+        'console':{
+            'level': 'DEBUG',  # Maybe change this to INFO later
+            'class' : 'logging.StreamHandler',
+            'formatter': 'simple',
+        }
+        #TODO: Add Sentry handler and redirect all logs for 'warning' and above to it
+    },
+    'loggers': {
+        #root logger. Loggers from all files will use this.
+        '': {
+            'handlers': ['file', 'console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'), #Set the env for custom filtering. TODO: Change this to INFO later
+            #'propagate': True,
+        },
+    },
+}
