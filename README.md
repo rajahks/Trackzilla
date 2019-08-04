@@ -1,7 +1,11 @@
 # Asseto
 A simple online asset manager to manage assets within and across teams.  
 
-Docker commands:
+# Setup:
+After Git clone
+	Run  ./setupEnv.sh to overwrite the userid and groupid values
+
+#Docker commands:
 
 1) Running the application
 	sudo docker-compose up 
