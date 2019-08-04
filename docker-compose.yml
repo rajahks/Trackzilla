@@ -1,11 +1,20 @@
 version: '3'
 services:
         app:
-                build: . # Build using the Dockerfile present in the current dir
+                build: 
+                        context: . # Build using the Dockerfile present in the current dir
+                        args:
+                                UID: $USERID
+                                GID: $GROUPID
+                                #user: $USER
                 volumes:
                         - .:/code
+                env_file:
+                        - .env   # run ./setupEnv.sh so that above args are picked up. 
                 ports:
                         - "8000:8000"
+                #user: "${USERID}:${GROUPID}"  # Simpler alternative to useradd defined in Dockerfile.
                 command: bash docker-entrypoint.sh #Run the startupscript which will make the migrations and run the dev server
                 
+
                 
