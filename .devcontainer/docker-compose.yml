@@ -1,0 +1,19 @@
+version: '3'
+services:
+        app:
+                build: 
+                        context: .. # Set the context as parent dir. Set all settings from parent dir
+                        args:
+                                USER_UID: $USERID
+                                USER_GID: $GROUPID
+                        dockerfile: .devcontainer/Dockerfile
+                volumes:
+                        - ..:/code
+                env_file:
+                        - ../.env   # run ./setupEnv.sh so that above args are picked up. 
+                # ports:
+                #        - 9000:9000  # for the django run server
+                command: sleep infinity  # donot launch anything as we will want to launch the debugger.
+                
+
+                
