@@ -1,0 +1,18 @@
+// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+{
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/code",
+	"extensions": [
+		"ms-python.python",
+		"VisualStudioExptTeam.vscodeintellicode",
+	],
+	"settings": {
+		"python.pythonPath": "/usr/local/bin/python",
+		"python.linting.pylintEnabled": true,
+		"python.linting.pylintPath": "/usr/local/bin/pylint",
+		"python.linting.enabled": true
+	},
+	"appPort": 9000,
+	
+}
