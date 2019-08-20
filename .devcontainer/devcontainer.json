@@ -7,6 +7,7 @@
 		"ms-python.python",
 		"VisualStudioExptTeam.vscodeintellicode",
 		"batisteo.vscode-django",
+		"njpwerner.autodocstring"
 	],
 	"settings": {
 		"python.pythonPath": "/usr/local/bin/python",
