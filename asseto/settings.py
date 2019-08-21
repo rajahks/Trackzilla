@@ -167,6 +167,8 @@ LOGGING = {
 # SMTP will send out a mail externally using SMTP protocol.
 # For SMTP, the settings below are configured to use SendGrid service
 # Sendgrid alllows 100 free email per day. We can change to gmail as well by providing similar settings.
+# Sendgrid example: https://sendgrid.com/docs/for-developers/sending-email/django/ 
+# TODO: Move the above example to documentation later.
 
 OUR_EMAIL_BACKEND = "console" # Uncomment the required backend.
 #OUR_EMAIL_BACKEND = "smtp"
