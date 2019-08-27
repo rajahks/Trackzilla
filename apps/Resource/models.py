@@ -1,5 +1,6 @@
 from django.db import models
 from apps.Users.models import AssetUser
+from apps.Organization.models import Org
 
 
 class Resource(models.Model):
@@ -14,7 +15,7 @@ class Resource(models.Model):
     # We achieve this constraint by using the models.PROTECT constraint.
     # https://docs.djangoproject.com/en/2.2/ref/models/fields/#django.db.models.PROTECT
     current_user = models.ForeignKey(AssetUser, on_delete=models.PROTECT,
-                                     related_name='res_being_used')  # TODO: Change this to our User model.
+                                     related_name='res_being_used')
 
     # FK to the User who is currently managing the device.
     # This user would have admin privileges over the device.
@@ -23,8 +24,8 @@ class Resource(models.Model):
     # to be deleted when he has Resources assigned to him.
     # Enforce the constraint.
     device_admin = models.ForeignKey(AssetUser, on_delete=models.PROTECT,
-                                     related_name='res_being_managed')  # TODO: change this to our user model.
-    # TODO: Also check if we really need the 'related_name' fields for both the above 2 models.
+                                     related_name='res_being_managed')
+
     # The related_name allows us to fetch the resource list from the User model itself. Very useful as we would mostly
     # need to fetch these details per user. Might be better to let the ORM take care of this for us.
 
@@ -45,7 +46,7 @@ class Resource(models.Model):
         (RES_ACKNOWLEDGED, 'Acknowledged')
     ]
 
-    # TODO: Check if the states defined above are ok.
+    # TODO: Check if the states defined above are ok - should we have a conflicted/disputed status?
     status = models.CharField(choices=RES_STATUS_CHOICES, default=RES_UNASSIGNED, max_length=20)
 
     # Any additional information about the device to go into this field.
@@ -55,7 +56,7 @@ class Resource(models.Model):
     # Every resource will belong to an Organisation. This way we can have
     # resources belonging to different orgs on the same DB and filter them
     # based on a logged in user's organisation.
-    # organisation = models.ForeignKey("app.Model", verbose_name=_(""), on_delete=models.CASCADE)
+    org_id = models.ForeignKey(Org, on_delete=models.PROTECT, null=True)
 
     class Meta:
         verbose_name = "resource"
