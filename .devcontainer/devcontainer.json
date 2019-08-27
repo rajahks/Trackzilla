@@ -7,7 +7,9 @@
 		"ms-python.python",
 		"VisualStudioExptTeam.vscodeintellicode",
 		"batisteo.vscode-django",
-		"njpwerner.autodocstring"
+		"njpwerner.autodocstring",
+		"streetsidesoftware.code-spell-checker",
+		"shardulm94.trailing-spaces"
 	],
 	"settings": {
 		"python.pythonPath": "/usr/local/bin/python",
@@ -16,5 +18,5 @@
 		"python.linting.enabled": true
 	},
 	"appPort": 9000,
-	
+
 }

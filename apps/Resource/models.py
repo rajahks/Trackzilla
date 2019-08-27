@@ -1,6 +1,7 @@
 from django.db import models
 from apps.Users.models import AssetUser
 from apps.Organization.models import Org
+from django.urls import reverse
 
 
 class Resource(models.Model):
@@ -55,7 +56,7 @@ class Resource(models.Model):
     # TODO: Add a FK to a organisation.
     # Every resource will belong to an Organisation. This way we can have
     # resources belonging to different orgs on the same DB and filter them
-    # based on a logged in user's organisation.
+    # based on a logged in user's organization.
     org_id = models.ForeignKey(Org, on_delete=models.PROTECT, null=True)
 
     class Meta:
@@ -65,5 +66,6 @@ class Resource(models.Model):
     def __str__(self):
         return self.name
 
-    # def get_absolute_url(self):
-    #     return reverse("_detail", kwargs={"pk": self.pk})
+    def get_absolute_url(self):
+        #return reverse("detail", kwargs={"pk": self.pk})
+        return "placeholder" #TODO: return the detail view url
