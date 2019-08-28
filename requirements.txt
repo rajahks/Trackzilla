@@ -4,3 +4,4 @@ django-bootstrap4>=0.0.8,<0.1.0
 #Below required only for development. Maybe move it to a separate file
 ipython  
 pylint
+django-crispy-forms

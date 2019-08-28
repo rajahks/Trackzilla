@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'apps.Organization',
     'apps.Users',
+    'crispy_forms',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -123,6 +124,12 @@ STATIC_ROOT = ''
 STATIC_URL = '/static/'
 STATICFILES_DIRS = ( os.path.join('static'), )
 
+# Crispy forms by default use bootstrap 2. Suggesting here that they use bootstrap4 for styling.
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# Django by default tries to access a url /accounts/profile to which it tries to redirect a user when he logs in
+# But we do not want to take a user to his profile ever when he logs in. We want to go to the landing page.
+LOGIN_REDIRECT_URL = 'tracker-home'
 
 # LOGGING configuration
 LOGGING = {
