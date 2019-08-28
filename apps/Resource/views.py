@@ -37,7 +37,8 @@ class ResourceSearchView(SearchView):
         # we received a different suggestion
 
         spell_suggestion = self.get_form().get_suggestion()
-        if spell_suggestion != None and context['query'] != spell_suggestion:
+        query = context['query']
+        if spell_suggestion != None and query.casefold() != spell_suggestion.casefold():
             context['spell_suggestion'] = spell_suggestion   #Can this ever be a list?
 
         return context
