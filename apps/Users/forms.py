@@ -9,6 +9,7 @@ class UserRegisterForm(UserCreationForm):
 
     # The model I want this form to interact with. And the fields that I want to be shown in this form.
     # When a form.save() is called for this custom form, this is the model that's going to be updated.
+    # TODO : check if we would need firstname ,lastname fields here.
     class Meta:
         model = AssetUser
         fields = ['username', 'email', 'password1', 'password2']
