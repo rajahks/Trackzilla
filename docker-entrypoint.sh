@@ -12,9 +12,9 @@ python manage.py makemigrations
 echo "Apply database migrations"
 python manage.py migrate
 
-# Updating Haystack search index. Remove entries which are not in DB
-echo "Updating Haystack search index"
-python manage.py update_index --remove
+# Rebuilding Haystack search index. Remove entries which are not in DB
+echo "Rebuilding Haystack search index"
+python manage.py rebuild_index --noinput
 
 # Start server
 echo "Starting server"
