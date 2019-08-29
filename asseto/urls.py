@@ -18,7 +18,7 @@ from django.urls import path, include
 from apps.Users import views as user_views
 from django.contrib.auth import views as auth_views
 import haystack
-from apps.Resource.views import ResourceSearchView
+from apps.Resource.views import ResourceSearchView, autocomplete
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,5 +28,6 @@ urlpatterns = [
     path('auth/', include('social_django.urls', namespace='social')),
     path('', include('apps.Users.urls')),
     path('search/', ResourceSearchView.as_view(), name='haystack_search'),
+    path('search/autocomplete/', autocomplete, name='autocomplete_view'),
     # path('search/', include('haystack.urls')), #TODO: Remove once the above search view is stable
 ]

@@ -3,7 +3,8 @@ django-bootstrap4>=0.0.8,<0.1.0
 django-crispy-forms
 django-haystack>=2.8.1,<2.9.0
 elasticsearch>=2.0.0,<3.0.0
+simplejson>=3.16.0,<4.0.0
 
 #Below required only for development. Maybe move it to a separate file
-ipython  
+ipython
 pylint

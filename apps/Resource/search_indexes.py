@@ -8,6 +8,9 @@ class ResourceIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
                              template_name="search/resource_text.txt")
 
+     # We add this for autocomplete.
+    device_name_auto = indexes.EdgeNgramField(model_attr='name')
+
     # Specify other attributes as fields so that we can use them as filters.
 
     # TODO: Add the organization as an attribute that is stored along with each record.

@@ -5,8 +5,12 @@ from django.http import HttpResponse
 from haystack.generic_views import SearchView
 from haystack.query import SearchQuerySet
 from haystack.forms import SearchForm, ModelSearchForm
-import logging
+# Imports for autocomplete
+import simplejson as json
 
+
+# Logging
+import logging
 logger = logging.getLogger(__name__)
 
 # Create your views here.
@@ -43,3 +47,14 @@ class ResourceSearchView(SearchView):
 
         return context
 
+
+def autocomplete(request):
+    sqs = SearchQuerySet().autocomplete(device_name_auto=request.GET.get('query', ''))
+    # TODO: [:5] at the end of the above sqs statement to display only top 5
+    suggestions = [result.object.name for result in sqs]
+    # Make sure you return a JSON object, not a bare list.
+    # Otherwise, you could be vulnerable to an XSS attack.
+    the_data = json.dumps({
+        'suggestions': suggestions
+    })
+    return HttpResponse(the_data, content_type='application/json')

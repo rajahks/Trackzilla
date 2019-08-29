@@ -1,63 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
-</head>
-<body>
-    <h2>Search</h2>
+{% extends 'Generic/base.html' %}
+{% block content %}
 
-    <form method="get" action=".">
-        <table>
-            {{ form.as_table }}
-            <tr>
-                <td>&nbsp;</td>
-                <td>
-                    <input type="submit" value="Search">
-                </td>
-            </tr>
-        </table>
 
-        {% if query %}
-            <h3>Results</h3>
+<div class="row">
+    <div class="col-md-12">
+        <form class="form-inline" action="/search/" method="get">
+            <input class="form-control mr-sm-2 col-8" type="search" placeholder="What are you looking for ?" aria-label="Search"  name="q" id="q" autocomplete="off">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </div>
+</div>
 
-            {% if page_obj.object_list|length == 0 %}
-               <p>No results found. </p>
-                {% if spell_suggestion %}
-                    <p> Maybe try: {{ spell_suggestion }}  </p>
-                {% endif %}
+
+{% if query %}
+    <!-- Display the search results -->
+    <div class="row">
+        <div class="col-md-6 col-xs-6">
+                Search result for: <label> {{query}} </label>
+        </div>
+    </div>
+
+    <div>
+    {% if  page_obj.object_list %}
+            <table class="table">
+                <tr>
+                    <th>Name</th>
+                    <th>Current User</th>
+                    <th>Device Admin</th>
+                </tr>
+            {% for result in page_obj.object_list %}
+                <tr>
+                    <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+                    <td>{{ result.object.current_user.username }}</td>
+                    <td>{{ result.object.device_admin.username }}</td>
+                </tr>
+            {% endfor %}
+            </table>
+ 
+        {% if is_paginated %}
+            <ul class="pagination pull-right">
+            {% if page_obj.has_previous %}
+                <li><a href="?q={{ query }}&page={{ page_obj.previous_page_number }}">«</a></li>
             {% else %}
-                <table>
-                    <tr>
-                        <th>Name</th>
-                        <th>Current User</th>
-                        <th>Device Admin</th>
-                    </tr>
-
-                {% for result in page_obj.object_list %}
-                    {% comment %} Display the results in rows {% endcomment %}
-                    <tr>
-                        <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
-                        <td>{{ result.object.current_user.username }}</td>
-                        <td>{{ result.object.device_admin.username }}</td>
-                    </tr>
-                {% endfor %}
-                </table>
+                <li class="disabled"><span>«</span></li>
             {% endif %}
-
-            {% if page.has_previous or page.has_next %}
-                <div>
-                    {% if page.has_previous %}<a href="?q={{ query }}&amp;page={{ page.previous_page_number }}">{% endif %}&laquo; Previous{% if page.has_previous %}</a>{% endif %}
-                    |
-                    {% if page.has_next %}<a href="?q={{ query }}&amp;page={{ page.next_page_number }}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
-                </div>
+            {% for i in paginator.page_range %}
+                {% if page_obj.number == i %}
+                <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                {% else %}
+                <li><a href="?q={{ query }}&page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li><a href="?q={{ query }}&page={{ page_obj.next_page_number }}">»</a></li>
+            {% else %}
+                <li class="disabled"><span>»</span></li>
             {% endif %}
-        {% else %}
-            {# Show some example queries to run, maybe query syntax, something else? #}
-            <p>Search for any resource or people Eg: Lenovo</p>
+            </ul>
         {% endif %}
-    </form>
-</body>
-</html>
+    {% else %}
+        <p> Sorry, no result found for the search term  <strong>{{query}} </strong></p>
+        {% if spell_suggestion %}
+            <p> Maybe try: {{ spell_suggestion }}  </p>
+        {% endif %}
+    {% endif %}
+    </div>
+{% endif %}  <!-- if query -->
+{% endblock content %}
+
+
