@@ -140,7 +140,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # Django by default tries to access a url /accounts/profile to which it tries to redirect a user when he logs in
 # But we do not want to take a user to his profile ever when he logs in. We want to go to the landing page.
-LOGIN_REDIRECT_URL = 'tracker-home'
+LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 
 # Google oauth ID and key
@@ -197,7 +197,7 @@ LOGGING = {
 # TODO: Move the above example to documentation later.
 
 OUR_EMAIL_BACKEND = "console" # Uncomment the required backend.
-#OUR_EMAIL_BACKEND = "smtp"
+# OUR_EMAIL_BACKEND = "smtp"
 
 if OUR_EMAIL_BACKEND is "console":
     # Console backend - Enable this during development so that the email is written to the console.
