@@ -33,6 +33,8 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'apps.Organization',
     'apps.Users',
+    'crispy_forms',
+    'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -65,6 +67,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -72,6 +76,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'asseto.wsgi.application'
 
+# authentication backends for single sign on using social profiles
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.open_id.OpenIdAuth',  # for Google authentication
+    'social_core.backends.google.GoogleOpenId',  # for Google authentication
+    'social_core.backends.google.GoogleOAuth2',  # for Google authentication
+
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
@@ -123,6 +135,18 @@ STATIC_ROOT = ''
 STATIC_URL = '/static/'
 STATICFILES_DIRS = ( os.path.join('static'), )
 
+# Crispy forms by default use bootstrap 2. Suggesting here that they use bootstrap4 for styling.
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# Django by default tries to access a url /accounts/profile to which it tries to redirect a user when he logs in
+# But we do not want to take a user to his profile ever when he logs in. We want to go to the landing page.
+LOGIN_REDIRECT_URL = 'home'
+LOGIN_URL = 'login'
+
+# Google oauth ID and key
+# TODO : add this as an env variable or something later
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY ='929102862935-fkigc7c93b98eo9chln2l3foci4bmlgp.apps.googleusercontent.com'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'NcvQb0ZFKy91G5CA0BK8h1TF'
 
 # LOGGING configuration
 LOGGING = {
@@ -150,7 +174,7 @@ LOGGING = {
             'class' : 'logging.StreamHandler',
             'formatter': 'simple',
         }
-        #TODO: Add Sentry handler and redirect all logs for 'warning' and above to it
+        # TODO: Add Sentry handler and redirect all logs for 'warning' and above to it
     },
     'loggers': {
         #root logger. Loggers from all files will use this.
@@ -173,7 +197,7 @@ LOGGING = {
 # TODO: Move the above example to documentation later.
 
 OUR_EMAIL_BACKEND = "console" # Uncomment the required backend.
-#OUR_EMAIL_BACKEND = "smtp"
+# OUR_EMAIL_BACKEND = "smtp"
 
 if OUR_EMAIL_BACKEND is "console":
     # Console backend - Enable this during development so that the email is written to the console.
