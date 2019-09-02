@@ -11,6 +11,7 @@ $(function () {
     type: 'GET',
     onSelect: function (suggestion) {
       console.log( 'Autocomplete Value:' + suggestion.value + ', data :' + suggestion.data);
+      // TODO: Review later if this log is required.
     }
   });
 

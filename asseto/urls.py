@@ -28,6 +28,6 @@ urlpatterns = [
     path('auth/', include('social_django.urls', namespace='social')),
     path('', include('apps.Users.urls')),
     path('search/', ResourceSearchView.as_view(), name='haystack_search'),
-    path('search/autocomplete/', autocomplete, name='autocomplete_view'),
+    path('search/autocomplete/', autocomplete, name='autocomplete'),
     # path('search/', include('haystack.urls')), #TODO: Remove once the above search view is stable
 ]
