@@ -14,6 +14,18 @@ services:
                 # ports:
                 #        - 9000:9000  # for the django run server
                 command: sleep infinity  # donot launch anything as we will want to launch the debugger.
-                
+                depends_on:
+                        - elasticsearch
+                        
+        elasticsearch:
+                image: launcher.gcr.io/google/elasticsearch2
+                ports:
+                        - "9200:9200"
+                        - "9300:9300"
+                volumes:
+                        - esdata:/usr/share/elasticsearch/data
 
+volumes:
+  esdata:
+    driver: local 
                 

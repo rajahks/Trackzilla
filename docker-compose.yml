@@ -13,8 +13,21 @@ services:
                         - .env   # run ./setupEnv.sh so that above args are picked up. 
                 ports:
                         - "8000:8000"
+                depends_on:
+                        - elasticsearch
                 #user: "${USERID}:${GROUPID}"  # Simpler alternative to useradd defined in Dockerfile.
                 command: bash docker-entrypoint.sh #Run the startupscript which will make the migrations and run the dev server
-                
+
+        elasticsearch:
+                image: launcher.gcr.io/google/elasticsearch2
+                ports:
+                        - "9200:9200"
+                        - "9300:9300"
+                volumes:
+                        - esdata:/usr/share/elasticsearch/data
+
+volumes:
+  esdata:
+    driver: local     
 
                 
