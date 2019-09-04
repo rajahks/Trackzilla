@@ -8,9 +8,9 @@ from haystack.forms import SearchForm, ModelSearchForm
 # Imports for autocomplete
 import simplejson as json
 # Imports for CRUD views
+from django import forms
 from .models import Resource
 from django.views.generic import (
-    DetailView,
     CreateView,
     UpdateView,
     DeleteView,
@@ -69,9 +69,23 @@ def autocomplete(request):
     return HttpResponse(the_data, content_type='application/json')
 
 
-class ResourceDetailView(DetailView):
+class ResourceDetailForm(forms.ModelForm):
+    class Meta:
+        model = Resource
+        fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
+    name = forms.CharField(disabled=True)
+    serial_num = forms.CharField(disabled=True)
+    current_user = forms.IntegerField(disabled=True)
+    device_admin = forms.IntegerField(disabled=True)
+    status = forms.ChoiceField(disabled=True)
+    org_id = forms.IntegerField(disabled=True)
+    # TODO : Figure out to make description text area also non editable
+
+
+class ResourceDetailView(UpdateView):
     model = Resource
     template_name = 'Resource/resource-detail.html'   # <app>/<model>_<viewtype>.html
+    form_class = ResourceDetailForm
 
 
 class ResourceCreateView(LoginRequiredMixin, CreateView):
@@ -83,8 +97,7 @@ class ResourceCreateView(LoginRequiredMixin, CreateView):
     fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
 
     def form_valid(self, form):
-        # If we're automatically setting device admin.
-        # TODO : Add if required.
+        # TODO : Add this if we're automatically setting device admin.
         # form.instance.device_admin = self.request.user
         return super().form_valid(form)
 
@@ -95,24 +108,23 @@ class ResourceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
 
     def form_valid(self, form):
-        form.instance.current_user = self.request.user
         return super().form_valid(form)
 
     def test_func(self):
         resource = self.get_object()
-        if self.request.user == resource.current_user:
+        if self.request.user.id == resource.current_user.id:
             return True
         return False
 
 
 class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Resource
-    template_name = 'Resource/resource-delete.html'
+    template_name = 'Resource/resource-confirm-delete.html'
     success_url = '/'
 
     def test_func(self):
         resource = self.get_object()
-        if self.request.user == resource.current_user:
+        if self.request.user.id == resource.current_user.id:
             return True
         return False
 

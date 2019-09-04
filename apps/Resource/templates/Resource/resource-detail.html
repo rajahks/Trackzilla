@@ -1,51 +1,16 @@
 {% extends "Generic/base.html" %}
+{% load crispy_forms_tags %}
 {% block content %}
-
-<fieldset>
-    <div>
-        <div>
-            <label >Name:</label>
-            <label > {{ object.name }} </label>
-        </div>
+    <div class="content-section">
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Resource Details</legend>
+                {{ form|crispy }}
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Save</button>
+            </div>
+        </form>
     </div>
-    <div>
-        <div>
-            <label >Serial num:</label>
-            <label > {{ object.serial_num }} </label>
-        </div>
-    </div>
-    <div >
-        <div>
-            <label >Current user:</label>
-            <label > {{ object.current_user.username }} </label>
-        </div>
-    </div>
-    <div >
-        <div>
-            <label >Device admin:</label>
-            <label > {{ object.device_admin.username }} </label>
-        </div>
-    </div>
-    <div >
-        <div>
-            <label >Status:</label>
-            <label > {{ object.get_status_display }} </label>
-        </div>
-    </div>
-    <div >
-        <div>
-            <label >Description:</label>
-            <textarea name="description" cols="40" rows="10" >
-                {{ object.description }}
-            </textarea>
-        </div>
-    </div>
-    <div >
-        <div>
-            <label >Org id:</label>
-            <label >{{ object.org_id.org_name }}</label>
-        </div>
-    </div>
-</fieldset>
-
 {% endblock content %}
