@@ -30,4 +30,5 @@ urlpatterns = [
     path('search/', ResourceSearchView.as_view(), name='haystack_search'),
     path('search/autocomplete/', autocomplete, name='autocomplete'),
     # path('search/', include('haystack.urls')), #TODO: Remove once the above search view is stable
+    path('', include('apps.Resource.urls'))
 ]

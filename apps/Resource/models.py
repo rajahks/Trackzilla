@@ -67,5 +67,5 @@ class Resource(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        #return reverse("detail", kwargs={"pk": self.pk})
-        return "placeholder" #TODO: return the detail view url
+        return reverse("resource-detail", kwargs={"pk": self.pk})
+
