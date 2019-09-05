@@ -8,6 +8,16 @@ from haystack.forms import SearchForm, ModelSearchForm
 # Imports for autocomplete
 import simplejson as json
 
+# Imports for CRUD views
+from .forms import ResourceDetailForm
+from .models import Resource
+from django.views.generic import (
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
 #Imports required for Mail
 from django.core import mail
 from django.template.loader import render_to_string
@@ -18,12 +28,12 @@ from django.core.mail import EmailMessage
 from .models import Resource
 from django.http import HttpResponseForbidden, Http404
 
-
 # Logging
 import logging
+
 logger = logging.getLogger(__name__)
 
-# Create your views here.
+
 class ResourceSearchView(SearchView):
     """Custom SearchView to tweak the search behavior performed on the resources.
 
@@ -34,9 +44,9 @@ class ResourceSearchView(SearchView):
 
     template_name = 'search/search.html'
     queryset = SearchQuerySet().all()
-    #TODO: Filter SearchQuerySet to contain only resources belonging to the user's org
+    # TODO: Filter SearchQuerySet to contain only resources belonging to the user's org
     # queryset = SearchQuerySet().filter(org='<orgOfUser>') OR override get_queryset()
-    form_class = SearchForm  #Use ModelSeachForm if we need to restrict search to only few models
+    form_class = SearchForm  # Use ModelSeachForm if we need to restrict search to only few models
 
     def get_context_data(self, *args, **kwargs):
         context = super(ResourceSearchView, self).get_context_data(*args, **kwargs)
@@ -53,7 +63,7 @@ class ResourceSearchView(SearchView):
         spell_suggestion = self.get_form().get_suggestion()
         query = context['query']
         if spell_suggestion != None and query.casefold() != spell_suggestion.casefold():
-            context['spell_suggestion'] = spell_suggestion   #Can this ever be a list?
+            context['spell_suggestion'] = spell_suggestion  # Can this ever be a list?
 
         return context
 
@@ -68,6 +78,53 @@ def autocomplete(request):
         'suggestions': suggestions
     })
     return HttpResponse(the_data, content_type='application/json')
+
+
+class ResourceDetailView(UpdateView):
+    model = Resource
+    template_name = 'Resource/resource-form.html'   # <app>/<model>_<viewtype>.html
+    form_class = ResourceDetailForm
+
+
+class ResourceCreateView(LoginRequiredMixin, CreateView):
+    model = Resource
+    # This CBV expects a template named resource_form.html. Overriding.
+    template_name = 'Resource/resource-form.html'
+    # CreateView class will automatically display for us a form asking for these fields.
+    # TODO : Should we ask for device_admin or automatically set it to the logged in user?
+    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
+
+    def form_valid(self, form):
+        # TODO : Add this if we're automatically setting device admin.
+        # form.instance.device_admin = self.request.user
+        return super().form_valid(form)
+
+
+class ResourceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Resource
+    template_name = 'Resource/resource-form.html'
+    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+
+    def test_func(self):
+        resource = self.get_object()
+        if self.request.user.id == resource.current_user.id:
+            return True
+        return False
+
+
+class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Resource
+    template_name = 'Resource/resource-confirm-delete.html'
+    success_url = '/'
+
+    def test_func(self):
+        resource = self.get_object()
+        if self.request.user.id == resource.current_user.id:
+            return True
+        return False
 
 def sendAssignmentMail( from_email, to_email, cur_user, prev_user,
                         device_name, ack_link, decline_link ):
@@ -235,3 +292,4 @@ def denyResource(request, pk):
 
     # Return a warning message that the resource is now in Disputed state.
     return render(request, template_name='Resource/deny.html', context=context )
+

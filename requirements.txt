@@ -2,6 +2,7 @@ Django>=2.2.3,<2.3.0
 django-bootstrap4>=0.0.8,<0.1.0
 django-crispy-forms
 social-auth-app-django
+
 # Packages required for Search.
 django-haystack>=2.8.1,<2.9.0
 elasticsearch>=2.0.0,<3.0.0

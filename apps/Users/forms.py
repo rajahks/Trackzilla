@@ -1,6 +1,7 @@
 from django import forms
 from .models import AssetUser
 from django.contrib.auth.forms import UserCreationForm
+from apps.Organization.models import Org
 
 
 class UserRegisterForm(UserCreationForm):
@@ -13,3 +14,13 @@ class UserRegisterForm(UserCreationForm):
     class Meta:
         model = AssetUser
         fields = ['username', 'email', 'password1', 'password2']
+
+
+class UserDetailForm(forms.ModelForm):
+    username = forms.CharField(disabled=True)
+    email = forms.CharField(disabled=True)
+    org_id = forms.ModelChoiceField(queryset=Org.objects.all(), disabled=True)
+
+    class Meta:
+        model = AssetUser
+        fields = ['username', 'email', 'org_id']

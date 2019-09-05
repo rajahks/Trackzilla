@@ -1,5 +1,6 @@
 from django.db import models
 from apps.Users.models import AssetUser
+from django.urls import reverse
 
 
 class Org(models.Model):
@@ -12,6 +13,9 @@ class Org(models.Model):
 
     def __str__(self):
         return self.org_name
+
+    def get_absolute_url(self):
+        return reverse("org-detail", kwargs={"pk": self.pk})
 
 
 class Team(models.Model):
@@ -33,4 +37,5 @@ class Team(models.Model):
     def __str__(self):
         return self.team_name
 
-
+    def get_absolute_url(self):
+        return reverse("team-detail", kwargs={"pk": self.pk})

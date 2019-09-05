@@ -77,9 +77,8 @@ class Resource(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        #return reverse("detail", kwargs={"pk": self.pk})
-        return "placeholder" #TODO: return the detail view url
-
+        return reverse("resource-detail", kwargs={"pk": self.pk})
+        
     def get_acknowledge_url(self,request):
         """Called from a view to fetch the url which can be used to ack owning the device. 
         The pk of the device is embedded into the link.
@@ -103,3 +102,4 @@ class Resource(models.Model):
             str -- Url of the form http://<ip:port>/resource/<int:pk>/deny
         """
         return  request.build_absolute_uri("/resource/%d/deny"%(self.pk,))
+
