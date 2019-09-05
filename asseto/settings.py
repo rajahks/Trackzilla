@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'haystack', # to power our search
     'apps.Resource',
+    # Apps required for mail
+    'naomi', # Helps seeing the mail in browser
+    'django_inlinecss', #Used to inline the css.
 ]
 
 MIDDLEWARE = [
@@ -194,17 +197,23 @@ LOGGING = {
 # SMTP will send out a mail externally using SMTP protocol.
 # For SMTP, the settings below are configured to use SendGrid service
 # Sendgrid alllows 100 free email per day. We can change to gmail as well by providing similar settings.
-# Sendgrid example: https://sendgrid.com/docs/for-developers/sending-email/django/ 
+# Sendgrid example: https://sendgrid.com/docs/for-developers/sending-email/django/
 # TODO: Move the above example to documentation later.
 
-OUR_EMAIL_BACKEND = "console" # Uncomment the required backend.
+# Uncomment the required backend.
+# OUR_EMAIL_BACKEND = "console"
 # OUR_EMAIL_BACKEND = "smtp"
+OUR_EMAIL_BACKEND = "naomi"
 
 if OUR_EMAIL_BACKEND is "console":
     # Console backend - Enable this during development so that the email is written to the console.
     print("EMAIL_BACKEND = Console")
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
+elif OUR_EMAIL_BACKEND is "naomi":
+    print("EMAIL_BACKEND = naomi")
+    EMAIL_BACKEND = "naomi.mail.backends.naomi.NaomiBackend"
+    EMAIL_FILE_PATH = "/code/tmp"
+elif OUR_EMAIL_BACKEND is "smtp":
     # SMTP backend
     print("EMAIL_BACKEND = SMTP")
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -215,6 +224,8 @@ else:
     EMAIL_HOST_PASSWORD = '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' #TODO: Change this to read from env variable later.
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+else:
+    print("EMAIL_BACKEND = None")
 
 ######################################################################################
 # Configure Search

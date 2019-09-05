@@ -1,0 +1,80 @@
+{% load inlinecss %}
+{% inlinecss "mail/styles.css" %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="viewport" content="width=device-width" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Disputed Device</title>
+<!-- <link href="styles.css" media="all" rel="stylesheet" type="text/css" /> -->
+</head>
+
+<body itemscope itemtype="http://schema.org/EmailMessage">
+
+<table class="body-wrap">
+	<tr>
+		<td></td>
+		<td class="container" width="600">
+			<div class="content">
+				<table class="main" width="100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td class="alert alert-warning">
+							Warning: Device Dispute!
+						</td>
+					</tr>
+					<tr>
+						<td class="content-wrap">
+							<table width="100%" cellpadding="0" cellspacing="0">
+								<tr>
+									<td class="content-block">
+                    The user <strong>{{ cur_user }}</strong> has denied assignment of
+                    <strong>{{device_name}}</strong> by <strong>{{prev_user}}</strong>.
+									</td>
+								</tr>
+								<tr>
+									<td class="content-block">
+										<table class="table">
+											<thead>
+												<td>Assigned by</td>
+												<td>Assigned to</td>
+												<td>Device Admin</td>
+											</thead>
+											<tr>
+												<td>{{ prev_user }}</td>
+												<td>{{ cur_user }}</td>
+												<td>{{ device_admin }}</td>
+											</tr>
+											</table>
+									</td>
+								</tr>
+								<tr>
+									<td class="content-block">
+										<a href="{{ device_url }}" class="btn btn-primary">Device Link</a>
+									</td>
+								</tr>
+								<tr>
+									<td class="content-block">
+										&mdash; Trackzilla
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+				<div class="footer">
+					<table width="100%">
+						<tr>
+							<td class="aligncenter content-block">Follow <a href="http://twitter.com/trackzilla">@Trackzilla</a> on Twitter.</td>
+						</tr>
+					</table>
+				</div></div>
+		</td>
+		<td></td>
+	</tr>
+</table>
+
+</body>
+</html>
+
+{% endinlinecss %}

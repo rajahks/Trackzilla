@@ -18,6 +18,13 @@ class Resource(models.Model):
     current_user = models.ForeignKey(AssetUser, on_delete=models.PROTECT,
                                      related_name='res_being_used')
 
+    # FK to the previous user of the device. The field is updated when the resource is
+    # transferred from one person to another person. Current_user will be the one who to
+    # whom the resource is assigned and the previous_user will be the one who previously
+    # was using the resource.
+    previous_user = models.ForeignKey( AssetUser, on_delete=models.SET_NULL, blank=True,
+                                       null=True, related_name='res_prev_used')
+
     # FK to the User who is currently managing the device.
     # This user would have admin privileges over the device.
     # TODO: Yet to be decided what these admin privileges are (This would mostly allow the user to edit fields)
@@ -34,17 +41,20 @@ class Resource(models.Model):
     # 'Unassigned' - When the resource is not assigned to any User
     # 'Assigned' - When the resource is assigned to a User and the user has not get Ackd it
     # 'Acknowledged' - When the assigned user acks that the resource is available with him.
-    # Resources which are 'Unassigned' and which are 'Assigned' but not 'Acknowledged' have
-    # to be notified to the device admin.
+    # 'Disputed' - Set to Resources which the current user denies owning them.
+    # Resources which are 'Unassigned' and which are 'Assigned' but not 'Acknowledged'
+    # i.e. disputed have to be notified to the device admin.
 
     RES_UNASSIGNED = 'R_UASS'
     RES_ASSIGNED = 'R_ASS'
     RES_ACKNOWLEDGED = 'R_ACK'
+    RES_DISPUTE = 'R_DISP'
 
     RES_STATUS_CHOICES = [
         (RES_UNASSIGNED, 'Unassigned'),
         (RES_ASSIGNED, 'Assigned'),
-        (RES_ACKNOWLEDGED, 'Acknowledged')
+        (RES_ACKNOWLEDGED, 'Acknowledged'),
+        (RES_DISPUTE, 'Disputed')
     ]
 
     # TODO: Check if the states defined above are ok - should we have a conflicted/disputed status?
@@ -68,4 +78,28 @@ class Resource(models.Model):
 
     def get_absolute_url(self):
         return reverse("resource-detail", kwargs={"pk": self.pk})
+        
+    def get_acknowledge_url(self,request):
+        """Called from a view to fetch the url which can be used to ack owning the device. 
+        The pk of the device is embedded into the link.
+
+        Arguments:
+            request {HttpRequest} -- The Standard http request object obtained in view
+
+        Returns:
+            str -- Url of the form http://<ip:port>/resource/<int:pk>/acknowledge
+        """
+        return  request.build_absolute_uri("/resource/%d/acknowledge"%(self.pk,))
+
+    def get_deny_url(self,request):
+        """Called from a view to fetch the url which can be used to deny owning the device. 
+        The pk of the device is embedded into the link.
+
+        Arguments:
+            request {HttpRequest} -- The Standard http request object obtained in view
+
+        Returns:
+            str -- Url of the form http://<ip:port>/resource/<int:pk>/deny
+        """
+        return  request.build_absolute_uri("/resource/%d/deny"%(self.pk,))
 

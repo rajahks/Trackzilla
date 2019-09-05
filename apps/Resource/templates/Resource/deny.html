@@ -1,0 +1,34 @@
+{% extends 'Generic/base.html' %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-6 mx-auto">
+      <div class="card" >
+        <div class="card-body">
+          <h5 class="card-title alert alert-warning" role="alert">
+            <i class="fa fa-exclamation-triangle" aria-hidden=true></i>
+            Device {{device_name}} is now in Disputed State!</h5>
+          <p class="card-text">
+            An email to resolve the dispute has been sent out to the following users:
+          </p>
+          <table class="table">
+              <thead>
+                <tr>
+                  <th>Assigned by</th>
+                  <th>Assigned to</th>
+                  <th>Device Admin</th>
+                </tr>
+              </thead>
+              <tr>
+                <td>{{ prev_user }}</td>
+                <td>{{ cur_user }}</td>
+                <td>{{ device_admin }}</td>
+              </tr>
+            </table>
+          <a href="{% url 'home' %}" class="btn btn-primary">Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

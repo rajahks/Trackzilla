@@ -21,12 +21,13 @@ from django.contrib.auth import views as auth_views
 from apps.Resource.views import ResourceSearchView, autocomplete
 
 urlpatterns = [
+    path('', include('apps.Users.urls')),
     path('admin/', admin.site.urls),
     path('register/', user_views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(template_name='Users/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(template_name='Users/logout.html'), name='logout'),
     path('auth/', include('social_django.urls', namespace='social')),
-    path('', include('apps.Users.urls')),
+    path('resource/', include('apps.Resource.urls')),
     path('search/', ResourceSearchView.as_view(), name='haystack_search'),
     path('search/autocomplete/', autocomplete, name='autocomplete'),
     # path('search/', include('haystack.urls')), #TODO: Remove once the above search view is stable
