@@ -1,0 +1,19 @@
+{% extends 'Generic/base.html' %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-6 mx-auto">
+      <div class="card" >
+        <div class="card-body">
+          <h5 class="card-title alert alert-success" role="alert"><i class="fa fa-check-circle " aria-hidden=true> </i> Success</h5>
+          <p class="card-text">
+            Thank you <strong>{{ ack_user }}</strong> for acknowledging the resource 
+            <strong>{{ device_name }}</strong>.
+          </p>
+          <a href="{% url 'home' %}" class="btn btn-primary">Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

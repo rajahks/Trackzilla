@@ -1,0 +1,5 @@
+This folder has been created to store the email files that will be created by the naomi email backend.
+This is just an easy way for us to access the files created in the docker container outside the docker container.
+
+This is not the right way and will need to be moved to volumes later on. 
+Temporary fix. To be fixed compulsorily later. 
