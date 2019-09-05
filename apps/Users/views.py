@@ -1,6 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import UserRegisterForm
+from .forms import UserRegisterForm, UserDetailForm
+# Imports for CRUD views
+from .models import AssetUser
+from django.views.generic import (
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 def home(request):
@@ -17,3 +25,34 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, 'Users/register.html', {'form': form})
+
+
+class UserDetailView(UpdateView):
+    model = AssetUser
+    template_name = 'Users/user-form.html'
+    form_class = UserDetailForm
+
+
+class UserCreateView(LoginRequiredMixin, CreateView):
+    model = AssetUser
+    # This CBV expects a template named user_form.html. Overriding.
+    template_name = 'Users/user-form.html'
+    fields = ['username', 'email', 'password', 'org_id']
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+
+
+class UserUpdateView(LoginRequiredMixin, UpdateView):
+    model = AssetUser
+    template_name = 'Users/user-form.html'
+    fields = ['username', 'email', 'org_id']
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+
+
+class UserDeleteView(LoginRequiredMixin, DeleteView):
+    model = AssetUser
+    template_name = 'Users/user-confirm-delete.html'
+    success_url = '/'

@@ -8,7 +8,7 @@ from haystack.forms import SearchForm, ModelSearchForm
 # Imports for autocomplete
 import simplejson as json
 # Imports for CRUD views
-from django import forms
+from .forms import ResourceDetailForm
 from .models import Resource
 from django.views.generic import (
     CreateView,
@@ -69,22 +69,9 @@ def autocomplete(request):
     return HttpResponse(the_data, content_type='application/json')
 
 
-class ResourceDetailForm(forms.ModelForm):
-    class Meta:
-        model = Resource
-        fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
-    name = forms.CharField(disabled=True)
-    serial_num = forms.CharField(disabled=True)
-    current_user = forms.IntegerField(disabled=True)
-    device_admin = forms.IntegerField(disabled=True)
-    status = forms.ChoiceField(disabled=True)
-    org_id = forms.IntegerField(disabled=True)
-    # TODO : Figure out to make description text area also non editable
-
-
 class ResourceDetailView(UpdateView):
     model = Resource
-    template_name = 'Resource/resource-detail.html'   # <app>/<model>_<viewtype>.html
+    template_name = 'Resource/resource-form.html'   # <app>/<model>_<viewtype>.html
     form_class = ResourceDetailForm
 
 
