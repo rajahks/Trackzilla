@@ -78,28 +78,29 @@ class Resource(models.Model):
 
     def get_absolute_url(self):
         return reverse("resource-detail", kwargs={"pk": self.pk})
-        
-    def get_acknowledge_url(self,request):
+
+    def get_acknowledge_url(self):
         """Called from a view to fetch the url which can be used to ack owning the device. 
         The pk of the device is embedded into the link.
 
-        Arguments:
-            request {HttpRequest} -- The Standard http request object obtained in view
-
         Returns:
-            str -- Url of the form http://<ip:port>/resource/<int:pk>/acknowledge
-        """
-        return  request.build_absolute_uri("/resource/%d/acknowledge"%(self.pk,))
+            str -- Url of the form  'resource/<int:pk>/acknowledge'
 
-    def get_deny_url(self,request):
-        """Called from a view to fetch the url which can be used to deny owning the device. 
+        Note: The value returned by this should be appended to server uri returned by
+        build_absolute_url. The call in a view would be something like
+        'request.build_absolute_uri(resource.get_acknowledge_url())'
+        """
+        return  "/resource/%d/acknowledge"%(self.pk,)
+
+    def get_deny_url(self):
+        """Called from a view to fetch the url which can be used to deny owning the device.
         The pk of the device is embedded into the link.
 
-        Arguments:
-            request {HttpRequest} -- The Standard http request object obtained in view
-
         Returns:
-            str -- Url of the form http://<ip:port>/resource/<int:pk>/deny
-        """
-        return  request.build_absolute_uri("/resource/%d/deny"%(self.pk,))
+            str -- Url of the form 'resource/<int:pk>/deny'
 
+        Note: The value returned by this should be appended to server uri returned by
+        build_absolute_url. The call in a view would be something like
+        'request.build_absolute_uri(resource.get_deny_url())'
+        """
+        return "/resource/%d/deny"%(self.pk,)
