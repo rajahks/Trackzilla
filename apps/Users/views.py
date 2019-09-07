@@ -16,7 +16,10 @@ def home(request):
 
 
 def people_list(request):
-    return render(request, 'Users/people_list.html')
+    context = {
+        'people': AssetUser.objects.all()
+    }
+    return render(request, 'Users/people_list.html', context)
 
 
 def register(request):

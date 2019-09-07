@@ -40,7 +40,10 @@ logger = logging.getLogger(__name__)
 
 
 def resources_list(request):
-    return render(request, 'Resource/resources_list.html')
+    context = {
+        'resources': Resource.objects.all()
+    }
+    return render(request, 'Resource/resources_list.html', context)
 
 
 class ResourceSearchView(SearchView):
