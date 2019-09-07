@@ -15,7 +15,10 @@ def context(request):
 
 
 def teams_list(request):
-    return render(request, 'Organization/teams_list.html')
+    context = {
+        'teams': Team.objects.all()
+    }
+    return render(request, 'Organization/teams_list.html', context)
 
 
 # CRUD views for Org
