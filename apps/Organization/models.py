@@ -23,7 +23,7 @@ class Team(models.Model):
 
     # Admins for the team. Yes, a team can have multiple admins. However only a member of this
     # team must be allowed be added to this list.
-    team_admins = models.ManyToManyField(AssetUser, related_name='team_admins_list', blank=True)
+    team_admins = models.ManyToManyField(AssetUser, related_name='team_admin_for', blank=True)
 
     # Org to which the team belongs. Do not allow the parent Org to be deleted if there are teams in it.
     org_id = models.ForeignKey(Org, on_delete=models.PROTECT)
@@ -32,7 +32,7 @@ class Team(models.Model):
     sub_teams = models.ManyToManyField('self', related_name='sub_team_list', blank=True)
 
     # Members of the team.
-    team_members = models.ManyToManyField(AssetUser, related_name='team_member_list', blank=True)
+    team_members = models.ManyToManyField(AssetUser, related_name='team_member_of', blank=True)
 
     def __str__(self):
         return self.team_name

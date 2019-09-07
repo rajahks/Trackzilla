@@ -124,6 +124,13 @@ class ResourceUpdateView(LoginRequiredMixin, UpdateView):
         #    previous_user field and also send out a mail to the new user.
         # 2) If the user has changed then we need to reset the status to Assigned
 
+        # Get the model from the form and change the fields.
+        resource = form.save(commit=False)
+        # TODO: This is very bad hack to check if we have done save in the if case and not 
+        # trigger another save later. Need better code path.
+        resSaved = False  
+
+        # TODO: We might need to send a mail even when device admin is changed.
         if form.has_changed() and 'current_user' in form.changed_data:
             # The current user field has changed.
             #TODO: Can this even be None ? and why is this returning an ID instead of user object
@@ -135,12 +142,12 @@ class ResourceUpdateView(LoginRequiredMixin, UpdateView):
             except AssetUser.Doesnotexit:
                 logger.warning("Get of prev_user_id: %d failed"%(prev_user_id,))  #TODO: is this ever possible for previous. User object getting deleted when updated?
 
-            # Get the model from the form and change the fields.
-            resource = form.save(commit=False)
+            
             resource.previous_user = previous_user
             resource.status = Resource.RES_ASSIGNED
             # Save the model and then send out an email
             resource.save()
+            resSaved = True  #TODO: Remove this bool logic later
             # Form the ack and deny links by fetching the relative portion from the resource
             ack_url = self.request.build_absolute_uri(resource.get_acknowledge_url())
             deny_url = self.request.build_absolute_uri(resource.get_deny_url())
@@ -157,6 +164,9 @@ class ResourceUpdateView(LoginRequiredMixin, UpdateView):
                 logger.error("Sending an assignment email failed. Device:%s cur_user:%s cur_user_email:%s prev_user:%s"
                     %(resource.name, resource.current_user.get_username(),
                     resource.current_user.email, resource.previous_user.get_username()))
+
+        if resSaved is False:
+            resource.save()
 
         # On successfull update, redirect to the detail page.
         return redirect('resource-detail',pk=resource.pk)

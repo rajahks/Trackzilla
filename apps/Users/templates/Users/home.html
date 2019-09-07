@@ -1,4 +1,152 @@
 {% extends "Generic/base_sidebar.html" %}
 {% block content %}
-    <!-- Add our home page content here later -->
+{% load staticfiles%}
+
+<div class="col-md-8">
+<div class="jumbotron">
+    <h2>Hello {{user.get_username}}, welcome to Trackzilla!</h2>
+    <i>The only tool you need to track them all!</i>
+</div>
+
+{% if needActionList|length %}
+<!-- We need to show the Resource needing action card -->
+<div class="card">
+    <div class="card-header"><strong>Resources requiring action</strong></div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <tbody>
+            {% for needActionEntry_dict in needActionList %}
+              <tr>
+                  <td>
+                    <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
+                    <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                    <a href="{{needActionEntry_dict.detail_url}}" >  <!-- class="text-dark" to get black links-->
+                        {{ needActionEntry_dict.name }}
+                    </a>
+                  </td>
+                  <td align="right">
+                    <a href="{{needActionEntry_dict.ack_url}}" class="btn btn-outline-primary btn-sm">Ack</a>
+                    <a href="{{needActionEntry_dict.deny_url}}" class="btn btn-outline-primary btn-sm">Deny</a>
+                  </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+          </table>
+    </div>
+</div>
+{% endif %}
+
+<br>
+
+{% if inUseList|length %}
+<!-- We need to show the Resources which are in the users name and have been ackd -->
+<div class="card">
+    <div class="card-header"><strong>Resources you are using</strong></div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <tbody>
+            {% for inUseEntry_dict in inUseList %}
+              <tr>
+                  <td>
+                    <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
+                    <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                    <a href="{{inUseEntry_dict.detail_url}}">
+                        {{ inUseEntry_dict.name }}
+                    </a>
+                  </td>
+                  <td align="right">
+                    <a href="{{inUseEntry_dict.update_url}}" class="btn btn-outline-primary btn-sm">Reassign</a>
+                  </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+          </table>
+    </div>
+</div>
+{% endif %}
+
+<br>
+
+{% if teamResourceDict|length %}
+<!-- We need to show the Resources which are in all the teams the user is part of -->
+<!-- teamResourceDict is a dictionary with keys corresponding to team names and values
+     would be a list of resources -->
+<div class="card">
+    <div class="card-header"><strong>Resources in your teams</strong></div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <thead>
+            <th>Resource Name</th>
+            <th>Team Name</th>
+            <th>Current User</th>
+          </thead>
+          <tbody>
+            {% for team, resList in teamResourceDict.items  %}
+              {% for res in resList %}
+                <tr>
+                    <td>
+                      <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
+                      <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                      <a href="{% url 'resource-detail' pk=res.id %}">
+                          {{ res.name }}
+                      </a>
+                    </td>
+                    <td>
+                      <!-- <a href="{{inUseEntry_dict.update_url}}" class="btn btn-outline-primary btn-sm">Reassign</a> -->
+                      {{ team }}
+                    </td>
+                    <td>
+                      {{ res.current_user.get_username }}
+                    </td>
+                  </tr>
+                {% endfor %}
+            {% endfor %}
+          </tbody>
+          </table>
+    </div>
+</div>
+{% endif %}
+
+<br>
+
+{% if managedDeviceList|length %}
+<!-- We need to show the Resources which are being managed by the logged in user -->
+<div class="card">
+    <div class="card-header"><strong>Resources you are managing</strong></div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <thead>
+            <tr>
+                <th>Name</th>
+                <th>Current User</th>
+                <th>Status</th>
+            </tr>
+            
+          </thead>
+          <tbody>
+            {% for res in managedDeviceList %}
+              <tr>
+                  <td>
+                    <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
+                    <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                    <a href="{% url 'resource-detail' pk=res.pk %}">
+                        {{ res.name }}
+                    </a>
+                  </td>
+                  <td>
+                      {{ res.current_user.get_username }}
+                  </td>
+                  <td>
+                      {{ res.get_status_display }}
+                  </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+          </table>
+    </div>
+</div>
+{% endif %}
+
+<br>
+
 {% endblock content %}

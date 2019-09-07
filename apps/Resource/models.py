@@ -79,6 +79,9 @@ class Resource(models.Model):
     def get_absolute_url(self):
         return reverse("resource-detail", kwargs={"pk": self.pk})
 
+    def get_update_url(self):
+        return reverse("resource-update", kwargs={"pk": self.pk})
+
     def get_acknowledge_url(self):
         """Called from a view to fetch the url which can be used to ack owning the device. 
         The pk of the device is embedded into the link.

@@ -9,10 +9,72 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from apps.Resource.models import Resource
 
-
+@login_required
 def home(request):
-    return render(request, 'Users/home.html')
+    """Users  landing page
+    
+    Arguments:
+        request {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
+
+    # Right pane - block 1 - Resources needing action. We need to fetch the list of devices
+    # which the users needs to ack or deny
+    # Send this as a list as part of dict
+    needActionList = []
+    resNeedActionQset = Resource.objects.filter(current_user__id=request.user.id).filter(status='R_ASS')
+    for res in resNeedActionQset:
+        needActEntryDict = {}
+        needActEntryDict['name'] = res.name
+        needActEntryDict['ack_url'] = request.build_absolute_uri(res.get_acknowledge_url())
+        needActEntryDict['deny_url'] = request.build_absolute_uri(res.get_deny_url())
+        needActEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
+        needActionList.append(needActEntryDict)
+
+    #TODO: Show resources in conflict in a separate block
+
+    # Right Pane - block 2 - Resources in your name and acknowledged
+    inUseList = []
+    resInUseQset = Resource.objects.filter(current_user__id=request.user.id).filter(status='R_ACK')
+    for res in resInUseQset:
+        inUseEntryDict = {}
+        inUseEntryDict['name'] = res.name
+        inUseEntryDict['update_url'] = request.build_absolute_uri(res.get_update_url())
+        inUseEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
+        inUseList.append(inUseEntryDict)
+
+    # Resources in you teams
+    # Since user could be part of more than 1 team, we need to fetch all the teams he is part of
+    teamResourceDict = {} # List of resource objects in the team
+    logged_in_user = request.user.assetuser #AssetUser.objects.get(id=user.id)
+    team_list = logged_in_user.team_member_of.all()
+    for team in team_list:
+        teamResourceList = []
+        # Find out all the members of the team
+        members = team.team_members.all()
+        # Now for each member we need to find all the resources he owns and 
+        # then add it to the list
+        for member in members:
+            teamResourceList += member.res_being_used.all()
+
+        # Add the team resource list against the team name in teamResourceDict
+        teamResourceDict[team.team_name] = teamResourceList
+
+    # Resources you are managing
+    resBeingManagedList = Resource.objects.filter(device_admin__id=request.user.id)
+
+    context = { "needActionList" : needActionList,
+                "inUseList" : inUseList,
+                "teamResourceDict" : teamResourceDict,
+                "managedDeviceList" : resBeingManagedList,
+    }
+
+    return render(request, 'Users/home.html', context=context)
 
 
 def people_list(request):
