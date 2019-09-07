@@ -51,7 +51,7 @@ def home(request):
     # Resources in you teams
     # Since user could be part of more than 1 team, we need to fetch all the teams he is part of
     teamResourceDict = {} # List of resource objects in the team
-    logged_in_user = request.user.assetuser #AssetUser.objects.get(id=user.id)
+    logged_in_user = AssetUser.objects.get(id=request.user.id)
     team_list = logged_in_user.team_member_of.all()
     for team in team_list:
         teamResourceList = []
