@@ -39,6 +39,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def resources_list(request):
+    return render(request, 'Resource/resources_list.html')
+
+
 class ResourceSearchView(SearchView):
     """Custom SearchView to tweak the search behavior performed on the resources.
 

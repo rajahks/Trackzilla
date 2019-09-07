@@ -15,6 +15,10 @@ def home(request):
     return render(request, 'Users/home.html')
 
 
+def people_list(request):
+    return render(request, 'Users/people_list.html')
+
+
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)

@@ -1,0 +1,11 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+    <nav class="nav nav-tabs nav-fill">
+    <a href="{% url 'teams-list' %}" class="nav-item nav-link active">Teams</a>
+    <a href="{% url 'people-list' %}" class="nav-item nav-link">People</a>
+    <a href="{% url 'resources-list' %}" class="nav-item nav-link">Resources</a>
+    <a href="#" class="nav-item nav-link" tabindex="-1">Settings</a>
+    </nav>
+{% block view_content %}
+{% endblock view_content %}
+{% endblock content %}

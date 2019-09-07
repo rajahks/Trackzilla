@@ -7,6 +7,15 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Org, Team
 from .forms import OrgDetailForm, TeamDetailForm
+from django.shortcuts import render
+
+
+def context(request):
+    return render(request, 'Organization/org_context.html')
+
+
+def teams_list(request):
+    return render(request, 'Organization/teams_list.html')
 
 
 # CRUD views for Org

@@ -67,6 +67,10 @@ h1, h2, h3, h4, h5, h6 {
     color: black;
 }
 
+.nav-link.active {
+    color: grey;
+}
+
 .feather {
   width: 16px;
   height: 16px;
@@ -141,3 +145,17 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+.list-group.list-group-flush {
+    color: grey;
+    padding: 1px;
+    border: none;
+}
+
+.list-group-item {
+    font-size: .75rem;
+    border: none;
+}
+
+.nav-item.nav-link {
+    color: black;
+}
