@@ -12,6 +12,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from apps.Resource.models import Resource
 
+import logging
+logger = logging.getLogger(__name__)
+
 @login_required
 def home(request):
     """Users  landing page
@@ -51,19 +54,25 @@ def home(request):
     # Resources in you teams
     # Since user could be part of more than 1 team, we need to fetch all the teams he is part of
     teamResourceDict = {} # List of resource objects in the team
-    logged_in_user = AssetUser.objects.get(id=request.user.id)
-    team_list = logged_in_user.team_member_of.all()
-    for team in team_list:
-        teamResourceList = []
-        # Find out all the members of the team
-        members = team.team_members.all()
-        # Now for each member we need to find all the resources he owns and 
-        # then add it to the list
-        for member in members:
-            teamResourceList += member.res_being_used.all()
+    try:
+        logged_in_user = AssetUser.objects.get(id=request.user.id)
+        team_list = logged_in_user.team_member_of.all()
+        for team in team_list:
+            teamResourceList = []
+            # Find out all the members of the team
+            members = team.team_members.all()
+            # Now for each member we need to find all the resources he owns and 
+            # then add it to the list
+            for member in members:
+                teamResourceList += member.res_being_used.all()
 
-        # Add the team resource list against the team name in teamResourceDict
-        teamResourceDict[team.team_name] = teamResourceList
+            # Add the team resource list against the team name in teamResourceDict
+            teamResourceDict[team.team_name] = teamResourceList
+    except:
+        # The call AssetUser.objects.get can fail for root user created from command line
+        # as it will not be part of the AssetUser table. Log the error as of now
+        # TODO: Catch the right error and come up with a better way
+        logger.error("AssetUser.objects.get call failed for user %s id%d"%(request.user.get_username(),request.user.id))
 
     # Resources you are managing
     resBeingManagedList = Resource.objects.filter(device_admin__id=request.user.id)
