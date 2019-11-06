@@ -62,14 +62,14 @@ class ChangeHistoryMixin(models.Model):
     # certain fields in a certain way Eg: Storing 'username' or email instead of ID value 
     # for ForeignKeys.
     #
-    # Example customer Serializer
+    # Example custom Serializer
     # def CustomFieldSerializer(instance, object_dict, *args, **kwargs):
     #   for field in object_dict:
     #     field_val = getattr(instance,field)
     #     if issubclass(field_val.__class__, User):
     #         object_dict[field] = field_val.get_username()
 
-    #     # Add other fields which need customer processing.
+    #     # Add other fields which need custom processing.
     #   return
     history__process_dict_hook = None
 
@@ -120,7 +120,7 @@ class ChangeHistoryMixin(models.Model):
         object_dict =  model_to_dict(self, fields=[field.name for field in
                              self._meta.fields])
         # Call the function which allows to perform custom processing on this dict.
-        # call it only if the user has declared a customer serializer.
+        # call it only if the user has declared a custom serializer.
         if self.history__process_dict_hook is not None:
             self.history__process_dict_hook(object_dict=object_dict) # self passed automatically by python.
         return object_dict
