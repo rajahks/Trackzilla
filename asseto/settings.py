@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'haystack', # to power our search
     'apps.Resource',
+    'apps.ChangeHistory',
     # Apps required for mail
     'naomi', # Helps seeing the mail in browser
     'django_inlinecss', #Used to inline the css.
@@ -56,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.ChangeHistory.middleware.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'asseto.urls'
