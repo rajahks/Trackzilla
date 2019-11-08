@@ -21,9 +21,11 @@ def CustomProcessDictHook(instance, object_dict, *args, **kwargs):
     """
     for field in object_dict:
             # for AssetUser
-            field_val = getattr(instance,field)
-            if issubclass(field_val.__class__, AssetUser):
-                object_dict[field] = field_val.get_username()
+            if hasattr(instance,field):
+                field_val = getattr(instance,field)
+                
+                if field_val is not None and issubclass(field_val.__class__, AssetUser):
+                    object_dict[field] = field_val.get_username()
 
             # TODO: add other non-serializable field types or fields which need custom
             # processing.
