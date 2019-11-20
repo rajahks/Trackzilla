@@ -3,8 +3,56 @@ from apps.Users.models import AssetUser
 from apps.Organization.models import Org
 from django.urls import reverse
 
+from apps.ChangeHistory.middleware import _get_django_request
+from apps.ChangeHistory.models import ChangeHistoryMixin
 
-class Resource(models.Model):
+import logging
+logger = logging.getLogger(__name__)
+
+
+def CustomProcessDictHook(instance, object_dict, *args, **kwargs):
+    """Hook function which will be set to the field 'history__process_dict_hook'
+    User FK in Resource get serialized to a number. This replaces the userID number with 
+    a username.
+
+    Arguments:
+        instance {Resource} -- Resource object is passed as self
+        object_dict {dict} -- Dictionary returned by model_to_dict.
+    """
+    for field in object_dict:
+            # for AssetUser
+            if hasattr(instance,field):
+                field_val = getattr(instance,field)
+                
+                if field_val is not None and issubclass(field_val.__class__, AssetUser):
+                    object_dict[field] = field_val.get_username()
+
+            # TODO: add other non-serializable field types or fields which need custom
+            # processing.
+    return
+
+def get_loggedin_user(*args,**kwargs):
+    """Custom function called by the ChangeHistory mixin to store the who changed the field.
+    This function returns the value to be stored in the 'who' field.
+
+    In our app we want this to be our logged in user. The logged in user is
+    present in the request object which is stored as a thread local variable using
+    the RequestMiddleware. Fetch the request object by calling _get_django_request() and
+    return the user value.
+
+    Returns:
+        str -- The value to be stored in the who field.
+    """
+    who = ''
+    request_obj = _get_django_request()
+    if request_obj is not None:
+        # We wish to store the email id in the who field.
+        # TODO: Check if we want email or username.
+        who = request_obj.user.email
+
+    return who
+
+class Resource( ChangeHistoryMixin, models.Model):
     # Name of the resource.
     name = models.CharField(max_length=50)
     # serial num used to uniquely identify the resource. Generally AlphaNumeric. 
@@ -69,6 +117,12 @@ class Resource(models.Model):
     # based on a logged in user's organization.
     org_id = models.ForeignKey(Org, on_delete=models.PROTECT, null=True)
 
+
+    # Configure the Hook functions used by ChangeHistoryMixin.
+    history__process_dict_hook = CustomProcessDictHook
+    history__get_user_hook = get_loggedin_user
+    history__max_entry_count = 100  #TODO: Make this configurable via global settings
+
     class Meta:
         verbose_name = "resource"
         verbose_name_plural = "resources"
@@ -78,28 +132,33 @@ class Resource(models.Model):
 
     def get_absolute_url(self):
         return reverse("resource-detail", kwargs={"pk": self.pk})
-        
-    def get_acknowledge_url(self,request):
+
+    def get_update_url(self):
+        return reverse("resource-update", kwargs={"pk": self.pk})
+
+    def get_acknowledge_url(self):
         """Called from a view to fetch the url which can be used to ack owning the device. 
         The pk of the device is embedded into the link.
 
-        Arguments:
-            request {HttpRequest} -- The Standard http request object obtained in view
-
         Returns:
-            str -- Url of the form http://<ip:port>/resource/<int:pk>/acknowledge
-        """
-        return  request.build_absolute_uri("/resource/%d/acknowledge"%(self.pk,))
+            str -- Url of the form  'resource/<int:pk>/acknowledge'
 
-    def get_deny_url(self,request):
-        """Called from a view to fetch the url which can be used to deny owning the device. 
+        Note: The value returned by this should be appended to server uri returned by
+        build_absolute_url. The call in a view would be something like
+        'request.build_absolute_uri(resource.get_acknowledge_url())'
+        """
+        return  "/resource/%d/acknowledge"%(self.pk,)
+
+    def get_deny_url(self):
+        """Called from a view to fetch the url which can be used to deny owning the device.
         The pk of the device is embedded into the link.
 
-        Arguments:
-            request {HttpRequest} -- The Standard http request object obtained in view
-
         Returns:
-            str -- Url of the form http://<ip:port>/resource/<int:pk>/deny
+            str -- Url of the form 'resource/<int:pk>/deny'
+
+        Note: The value returned by this should be appended to server uri returned by
+        build_absolute_url. The call in a view would be something like
+        'request.build_absolute_uri(resource.get_deny_url())'
         """
-        return  request.build_absolute_uri("/resource/%d/deny"%(self.pk,))
+        return "/resource/%d/deny"%(self.pk,)
 

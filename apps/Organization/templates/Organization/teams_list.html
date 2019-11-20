@@ -1,0 +1,12 @@
+{% extends "Organization/org_context.html" %}
+{% block view_content %}
+<div class="card">
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            {% for team in teams %}
+            <li class="list-group-item">{{ team.team_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock view_content %}

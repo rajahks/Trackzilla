@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+# For the resource update view
+from apps.Users.models import AssetUser
+from django.shortcuts import redirect
+
 # Haystack imports for Search
 from haystack.generic_views import SearchView
 from haystack.query import SearchQuerySet
@@ -24,14 +28,22 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.mail import EmailMessage
 
-# imports required for acknowledge
+# imports required for acknowledge and deny views
 from .models import Resource
 from django.http import HttpResponseForbidden, Http404
+from django.contrib.auth.decorators import login_required
 
 # Logging
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def resources_list(request):
+    context = {
+        'resources': Resource.objects.all()  # TODO: Needs to be ORG specific.
+    }
+    return render(request, 'Resource/resources_list.html', context)
 
 
 class ResourceSearchView(SearchView):
@@ -100,19 +112,75 @@ class ResourceCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class ResourceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+# TODO: Since we can have a Multi tenant app, we should check if the user has access to 
+# this resource. Maybe the UserPassesTestMixin will be useful
+# TODO: "Only an Admin can have update rights of fields other than current user".
+class ResourceUpdateView(LoginRequiredMixin, UpdateView):
     model = Resource
     template_name = 'Resource/resource-form.html'
     fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
+    # TODO: Set the context_object_name to resource so that we can access as resource instead of object.
 
     def form_valid(self, form):
-        return super().form_valid(form)
+        # Before we save the data, we need to perform few operations
+        # 1) If the current_user has changed, we need to save the previous current_user in
+        #    previous_user field and also send out a mail to the new user.
+        # 2) If the user has changed then we need to reset the status to Assigned
 
-    def test_func(self):
-        resource = self.get_object()
-        if self.request.user.id == resource.current_user.id:
-            return True
-        return False
+        # Get the model from the form and change the fields.
+        resource = form.save(commit=False)
+        # TODO: This is very bad hack to check if we have done save in the if case and not 
+        # trigger another save later. Need better code path.
+        resSaved = False  
+
+        # TODO: We might need to send a mail even when device admin is changed.
+        if form.has_changed() and 'current_user' in form.changed_data:
+            # The current user field has changed.
+            #TODO: Can this even be None ? and why is this returning an ID instead of user object
+            # Is it because we are not supplying a model form?
+            prev_user_id = form.initial['current_user']
+            previous_user = None
+            try:
+                previous_user = AssetUser.objects.get(pk=prev_user_id)
+            except AssetUser.Doesnotexit:
+                logger.warning("Get of prev_user_id: %d failed"%(prev_user_id,))  #TODO: is this ever possible for previous. User object getting deleted when updated?
+
+            
+            resource.previous_user = previous_user
+            resource.status = Resource.RES_ASSIGNED
+            # Save the model and then send out an email
+            resource.save()
+            resSaved = True  #TODO: Remove this bool logic later
+            # Form the ack and deny links by fetching the relative portion from the resource
+            ack_url = self.request.build_absolute_uri(resource.get_acknowledge_url())
+            deny_url = self.request.build_absolute_uri(resource.get_deny_url())
+
+# TODO: The from_email should ideally be read from common settings.
+
+            ret = sendAssignmentMail( from_email = 'no-reply<no-reply@trackzilla.com',
+                        to_email=resource.current_user.email,
+                        cur_user=resource.current_user.get_username(),
+                        prev_user=resource.previous_user.get_username(),
+                        device_name=resource.name, ack_link = ack_url,
+                        decline_link = deny_url)
+
+            if ret == 0:
+                #Sending the email failed. Log an error
+                logger.error("Sending an assignment email failed. Device:%s cur_user:%s cur_user_email:%s prev_user:%s"
+                    %(resource.name, resource.current_user.get_username(),
+                    resource.current_user.email, resource.previous_user.get_username()))
+
+        if resSaved is False:
+            resource.save()
+
+        # On successfull update, redirect to the detail page.
+        return redirect('resource-detail',pk=resource.pk)
+
+    # def test_func(self):
+    #     resource = self.get_object()
+    #     if self.request.user.id == resource.current_user.id:
+    #         return True
+    #     return False
 
 
 class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -120,9 +188,11 @@ class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = 'Resource/resource-confirm-delete.html'
     success_url = '/'
 
+    # TODO: Hackfest addition. Appropriate name if this is being used ?
     def test_func(self):
         resource = self.get_object()
-        if self.request.user.id == resource.current_user.id:
+        # Only the device admin should have delete rights.
+        if self.request.user.id == resource.device_admin.id:
             return True
         return False
 
@@ -194,6 +264,10 @@ def sendDisputeMail( from_email, to_email_list, cur_user, prev_user,
 
     return ret
 
+
+
+#TODO: include additional check that the resource belongs to his org.
+@login_required
 def ackResource(request, pk):
     """This view changes the state of the resource to acknowledged. Before doing so it
        checks if the user trying to acknowledge the resource has the resource in his name.
@@ -234,6 +308,8 @@ def ackResource(request, pk):
     # Return a success message that the resource was Acknowledged
     return render(request, template_name='Resource/ack.html', context=context )
 
+#TODO: include additional check that the resource belongs to his org.
+@login_required
 def denyResource(request, pk):
     """This view changes the state of the resource to disputed. Before doing so it
        checks if the user trying to dispute the resource has the resource in his name.
@@ -268,8 +344,9 @@ def denyResource(request, pk):
             loggedInUser.get_username()))
         # Trigger an email to inform users about the dispute.
         # Email to be sent to Current_user, prev_user and device_admin.
-        url = resBeingDenied.get_absolute_url()
+        url = request.build_absolute_uri(resBeingDenied.get_absolute_url())
         res = resBeingDenied
+        # TODO: the from_email to be read from common settings.
         ret = sendDisputeMail( from_email = 'no-reply<no-reply@trackzilla.com',
                 to_email_list=[ res.previous_user.email, res.current_user.email,
                 res.device_admin.email ],

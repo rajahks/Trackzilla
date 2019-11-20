@@ -1,0 +1,14 @@
+<!-- TODO: Introduced during Hackfest. Needs revision. -->
+
+{% extends "Organization/org_context.html" %}
+{% block view_content %}
+<div class="card">
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            {% for res in resources %}
+            <li class="list-group-item">{{ res.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock view_content %}

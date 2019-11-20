@@ -1,4 +1,5 @@
 from django.urls import path
+from . import views
 from .views import ackResource, denyResource
 from .views import (
     ResourceDetailView,
@@ -14,5 +15,6 @@ urlpatterns = [
     path('resource/<int:pk>/delete/', ResourceDeleteView.as_view(), name='resource-delete'),
     path('<int:pk>/acknowledge', ackResource, name='acknowledge_resource'),
     path('<int:pk>/deny', denyResource, name='deny_resource'),
+    path('resources/', views.resources_list, name='resources-list'),
 ]
 
