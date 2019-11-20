@@ -16,7 +16,7 @@ def context(request):
 
 def teams_list(request):
     context = {
-        'teams': Team.objects.all()
+        'teams': Team.objects.all()   #TODO: This has to be org specific.
     }
     return render(request, 'Organization/teams_list.html', context)
 

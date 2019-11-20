@@ -30,7 +30,7 @@ def home(request):
     # which the users needs to ack or deny
     # Send this as a list as part of dict
     needActionList = []
-    resNeedActionQset = Resource.objects.filter(current_user__id=request.user.id).filter(status='R_ASS')
+    resNeedActionQset = Resource.objects.filter(current_user__id=request.user.id).filter(status='R_ASS') #TODO: Use macro instead of R_ASS
     for res in resNeedActionQset:
         needActEntryDict = {}
         needActEntryDict['name'] = res.name
@@ -86,9 +86,10 @@ def home(request):
     return render(request, 'Users/home.html', context=context)
 
 
+#TODO: Hackfest Addition. Not sure why this was added. This maynot be required.
 def people_list(request):
     context = {
-        'people': AssetUser.objects.all()
+        'people': AssetUser.objects.all()   #TODO: Needs to be ORG specific.
     }
     return render(request, 'Users/people_list.html', context)
 

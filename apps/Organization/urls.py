@@ -11,6 +11,8 @@ from .views import (
     TeamUpdateView
 )
 
+    # TODO: All these urls needs to be ORG specific. Revisit and revise the urls.
+
 urlpatterns = [
     path('org/<int:pk>/', OrgDetailView.as_view(), name='org-detail'),
     path('org/new/', OrgCreateView.as_view(), name='org-create'),
@@ -20,7 +22,7 @@ urlpatterns = [
     path('team/new/', TeamCreateView.as_view(), name='team-create'),
     path('team/<int:pk>/update/', TeamUpdateView.as_view(), name='team-update'),
     path('team/<int:pk>/delete/', TeamDeleteView.as_view(), name='team-delete'),
-    # Assuming we have only one organization right now. Clicking on that Org
+    # TODO: Assuming we have only one organization right now. Clicking on that Org
     # (either in side pane or nav bar) should take him to this view. - to be implemented
     path('org/context/', views.context, name='org_context'),
     path('teams/', views.teams_list, name='teams-list'),

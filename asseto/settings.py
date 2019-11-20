@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites', # Sites framework
     'haystack', # to power our search
     'apps.Resource',
     'apps.ChangeHistory',
@@ -248,4 +249,8 @@ HAYSTACK_CONNECTIONS = {
 # added or updated would be quite low.
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 ######################################################################################
-
+# Setting required by the django.contrib.sites package.
+SITE_ID = 1
+DOMAIN_NAME = '127.0.0.1:8000' #TODO: Change this the appropriate name later when hosting. 
+DISPLAY_NAME = 'localhost'
+######################################################################################

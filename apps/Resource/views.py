@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 def resources_list(request):
     context = {
-        'resources': Resource.objects.all()
+        'resources': Resource.objects.all()  # TODO: Needs to be ORG specific.
     }
     return render(request, 'Resource/resources_list.html', context)
 
@@ -112,6 +112,9 @@ class ResourceCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
+# TODO: Since we can have a Multi tenant app, we should check if the user has access to 
+# this resource. Maybe the UserPassesTestMixin will be useful
+# TODO: "Only an Admin can have update rights of fields other than current user".
 class ResourceUpdateView(LoginRequiredMixin, UpdateView):
     model = Resource
     template_name = 'Resource/resource-form.html'
@@ -152,6 +155,8 @@ class ResourceUpdateView(LoginRequiredMixin, UpdateView):
             ack_url = self.request.build_absolute_uri(resource.get_acknowledge_url())
             deny_url = self.request.build_absolute_uri(resource.get_deny_url())
 
+# TODO: The from_email should ideally be read from common settings.
+
             ret = sendAssignmentMail( from_email = 'no-reply<no-reply@trackzilla.com',
                         to_email=resource.current_user.email,
                         cur_user=resource.current_user.get_username(),
@@ -183,6 +188,7 @@ class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = 'Resource/resource-confirm-delete.html'
     success_url = '/'
 
+    # TODO: Hackfest addition. Appropriate name if this is being used ?
     def test_func(self):
         resource = self.get_object()
         # Only the device admin should have delete rights.
@@ -258,6 +264,9 @@ def sendDisputeMail( from_email, to_email_list, cur_user, prev_user,
 
     return ret
 
+
+
+#TODO: include additional check that the resource belongs to his org.
 @login_required
 def ackResource(request, pk):
     """This view changes the state of the resource to acknowledged. Before doing so it
@@ -299,6 +308,7 @@ def ackResource(request, pk):
     # Return a success message that the resource was Acknowledged
     return render(request, template_name='Resource/ack.html', context=context )
 
+#TODO: include additional check that the resource belongs to his org.
 @login_required
 def denyResource(request, pk):
     """This view changes the state of the resource to disputed. Before doing so it
@@ -336,6 +346,7 @@ def denyResource(request, pk):
         # Email to be sent to Current_user, prev_user and device_admin.
         url = request.build_absolute_uri(resBeingDenied.get_absolute_url())
         res = resBeingDenied
+        # TODO: the from_email to be read from common settings.
         ret = sendDisputeMail( from_email = 'no-reply<no-reply@trackzilla.com',
                 to_email_list=[ res.previous_user.email, res.current_user.email,
                 res.device_admin.email ],

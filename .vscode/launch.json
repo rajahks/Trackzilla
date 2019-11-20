@@ -14,7 +14,7 @@
                 "runserver",
                 "--noreload",
                 "--nothreading",
-                "localhost:9000"
+                "localhost:8000"
             ],
             "django": true
         }
