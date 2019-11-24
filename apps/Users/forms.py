@@ -1,8 +1,11 @@
 from django import forms
-from .models import AssetUser
+# from .models import AssetUser
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from apps.Organization.models import Org
 
+#Get the current custom User Model.
+User = get_user_model()
 
 class UserRegisterForm(UserCreationForm):
     # email field is not provided in UserCreationForm by default. Add it.
@@ -12,15 +15,15 @@ class UserRegisterForm(UserCreationForm):
     # When a form.save() is called for this custom form, this is the model that's going to be updated.
     # TODO : check if we would need firstname ,lastname fields here.
     class Meta:
-        model = AssetUser
-        fields = ['username', 'email', 'password1', 'password2']
+        model = User
+        fields = [ 'email', 'name', 'password1', 'password2']
 
 
 class UserDetailForm(forms.ModelForm):
-    username = forms.CharField(disabled=True)
     email = forms.CharField(disabled=True)
-    org_id = forms.ModelChoiceField(queryset=Org.objects.all(), disabled=True)
+    name = forms.CharField(disabled=True)
+    org = forms.ModelChoiceField(queryset=Org.objects.all(), disabled=True)  #TODO: This should only show the orgs he is part of not all.
 
     class Meta:
-        model = AssetUser
-        fields = ['username', 'email', 'org_id']
+        model = User
+        fields = ['email', 'name', 'org']

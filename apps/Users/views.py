@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import UserRegisterForm, UserDetailForm
 # Imports for CRUD views
-from .models import AssetUser
+from django.contrib.auth import get_user_model
 from django.views.generic import (
     CreateView,
     UpdateView,
@@ -11,6 +11,9 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from apps.Resource.models import Resource
+
+# Fetch the current configured User model.
+User = get_user_model()
 
 import logging
 logger = logging.getLogger(__name__)
@@ -55,7 +58,7 @@ def home(request):
     # Since user could be part of more than 1 team, we need to fetch all the teams he is part of
     teamResourceDict = {} # List of resource objects in the team
     try:
-        logged_in_user = AssetUser.objects.get(id=request.user.id)
+        logged_in_user = User.objects.get(id=request.user.id)
         team_list = logged_in_user.team_member_of.all()
         for team in team_list:
             teamResourceList = []
@@ -69,10 +72,10 @@ def home(request):
             # Add the team resource list against the team name in teamResourceDict
             teamResourceDict[team.team_name] = teamResourceList
     except:
-        # The call AssetUser.objects.get can fail for root user created from command line
-        # as it will not be part of the AssetUser table. Log the error as of now
+        # The call User.objects.get can fail for root user created from command line
+        # as it will not be part of the User table. Log the error as of now
         # TODO: Catch the right error and come up with a better way
-        logger.error("AssetUser.objects.get call failed for user %s id%d"%(request.user.get_username(),request.user.id))
+        logger.error("User.objects.get call failed for user %s id%d"%(request.user.get_username(),request.user.id))
 
     # Resources you are managing
     resBeingManagedList = Resource.objects.filter(device_admin__id=request.user.id)
@@ -89,7 +92,7 @@ def home(request):
 #TODO: Hackfest Addition. Not sure why this was added. This maynot be required.
 def people_list(request):
     context = {
-        'people': AssetUser.objects.all()   #TODO: Needs to be ORG specific.
+        'people': User.objects.all()   #TODO: Needs to be ORG specific.
     }
     return render(request, 'Users/people_list.html', context)
 
@@ -107,31 +110,31 @@ def register(request):
 
 
 class UserDetailView(UpdateView):
-    model = AssetUser
+    model = User
     template_name = 'Users/user-form.html'
     form_class = UserDetailForm
 
 
 class UserCreateView(LoginRequiredMixin, CreateView):
-    model = AssetUser
+    model = User
     # This CBV expects a template named user_form.html. Overriding.
     template_name = 'Users/user-form.html'
-    fields = ['username', 'email', 'password', 'org_id']
+    fields = ['username', 'email', 'password', 'org']
 
     def form_valid(self, form):
         return super().form_valid(form)
 
 
 class UserUpdateView(LoginRequiredMixin, UpdateView):
-    model = AssetUser
+    model = User
     template_name = 'Users/user-form.html'
-    fields = ['username', 'email', 'org_id']
+    fields = ['username', 'email', 'org']
 
     def form_valid(self, form):
         return super().form_valid(form)
 
 
 class UserDeleteView(LoginRequiredMixin, DeleteView):
-    model = AssetUser
+    model = User
     template_name = 'Users/user-confirm-delete.html'
     success_url = '/'

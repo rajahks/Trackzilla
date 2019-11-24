@@ -1,11 +1,13 @@
 from django import forms
 from .models import Org, Team
-from apps.Users.models import AssetUser
+from django.contrib.auth import get_user_model
 
+#Get the current custom User Model.
+User = get_user_model()
 
 class OrgDetailForm(forms.ModelForm):
     org_name = forms.CharField(disabled=True)
-    admin_id = forms.ModelChoiceField(queryset=AssetUser.objects.all(), disabled=True)
+    admin_id = forms.ModelChoiceField(queryset=User.objects.all(), disabled=True) # TODO: This should be Org specific.
 
     class Meta:
         model = Org
@@ -14,11 +16,11 @@ class OrgDetailForm(forms.ModelForm):
 
 class TeamDetailForm(forms.ModelForm):
     team_name = forms.CharField(disabled=True)
-    org_id = forms.ModelChoiceField(queryset=Org.objects.all(),  disabled=True)
-    team_admins = forms.ModelMultipleChoiceField(queryset=AssetUser.objects.all(), disabled=True)
+    orgs = forms.ModelChoiceField(queryset=Org.objects.all(),  disabled=True)  #TODO: A team should ideally belong to a single org.
+    team_admins = forms.ModelMultipleChoiceField(queryset=User.objects.all(), disabled=True)  #TODO: All 3 below calls Should be Org specific.
     sub_teams = forms.ModelMultipleChoiceField(queryset=Team.objects.all(), disabled=True)
-    team_members = forms.ModelMultipleChoiceField(queryset=AssetUser.objects.all(), disabled=True)
+    team_members = forms.ModelMultipleChoiceField(queryset=User.objects.all(), disabled=True)
 
     class Meta:
         model = Team
-        fields = ['team_name', 'team_admins', 'org_id', 'sub_teams', 'team_members']
+        fields = ['team_name', 'team_admins', 'orgs', 'sub_teams', 'team_members']

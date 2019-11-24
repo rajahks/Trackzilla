@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 # For the resource update view
-from apps.Users.models import AssetUser
+from django.contrib.auth import get_user_model # Current user model
 from django.shortcuts import redirect
 
 # Haystack imports for Search
@@ -104,7 +104,7 @@ class ResourceCreateView(LoginRequiredMixin, CreateView):
     template_name = 'Resource/resource-form.html'
     # CreateView class will automatically display for us a form asking for these fields.
     # TODO : Should we ask for device_admin or automatically set it to the logged in user?
-    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
+    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
 
     def form_valid(self, form):
         # TODO : Add this if we're automatically setting device admin.
@@ -118,7 +118,7 @@ class ResourceCreateView(LoginRequiredMixin, CreateView):
 class ResourceUpdateView(LoginRequiredMixin, UpdateView):
     model = Resource
     template_name = 'Resource/resource-form.html'
-    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org_id']
+    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
     # TODO: Set the context_object_name to resource so that we can access as resource instead of object.
 
     def form_valid(self, form):
@@ -141,8 +141,9 @@ class ResourceUpdateView(LoginRequiredMixin, UpdateView):
             prev_user_id = form.initial['current_user']
             previous_user = None
             try:
-                previous_user = AssetUser.objects.get(pk=prev_user_id)
-            except AssetUser.Doesnotexit:
+                userModel = get_user_model()
+                previous_user = userModel.objects.get(pk=prev_user_id)
+            except userModel.Doesnotexit:
                 logger.warning("Get of prev_user_id: %d failed"%(prev_user_id,))  #TODO: is this ever possible for previous. User object getting deleted when updated?
 
             

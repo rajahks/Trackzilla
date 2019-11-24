@@ -62,7 +62,7 @@ class TeamDetailView(UpdateView):
 class TeamCreateView(LoginRequiredMixin, CreateView):
     model = Team
     template_name = 'Organization/team-form.html'
-    fields = ['team_name', 'team_admins', 'org_id', 'sub_teams', 'team_members']
+    fields = ['team_name', 'team_admins', 'org', 'sub_teams', 'team_members']
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -71,7 +71,7 @@ class TeamCreateView(LoginRequiredMixin, CreateView):
 class TeamUpdateView(LoginRequiredMixin, UpdateView):
     model = Team
     template_name = 'Organization/team-form.html'
-    fields = ['team_name', 'team_admins', 'org_id', 'sub_teams', 'team_members']
+    fields = ['team_name', 'team_admins', 'org', 'sub_teams', 'team_members']
 
     def form_valid(self, form):
         return super().form_valid(form)
