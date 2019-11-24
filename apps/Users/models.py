@@ -52,6 +52,15 @@ class AssetUser(AbstractBaseUser, PermissionsMixin):
     def get_absolute_url(self):
         return reverse("user-detail", kwargs={"pk": self.pk})
 
+    def get_name(self):
+      """Returns the string representing the name field
+
+      Returns:
+          str -- Should always be able to return a valid string because the field 'name'
+                 is compulsory while signing up.
+      """
+      return self.name
+
     def __str__(self):
       return self.name
 
