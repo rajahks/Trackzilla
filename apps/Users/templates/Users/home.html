@@ -6,7 +6,7 @@
 
 <div class="col-md-8">
 <div class="jumbotron">
-    <h2>Hello {{user.get_username}}, welcome to Trackzilla!</h2>
+    <h2>Hello {{user.name}}, welcome to Trackzilla!</h2>
     <i>The only tool you need to track them all!</i>
 </div>
 
@@ -98,7 +98,7 @@
                       {{ team }}
                     </td>
                     <td>
-                      {{ res.current_user.get_username }}
+                      {{ res.current_user.name }}
                     </td>
                   </tr>
                 {% endfor %}
@@ -136,7 +136,7 @@
                     </a>
                   </td>
                   <td>
-                      {{ res.current_user.get_username }}
+                      {{ res.current_user.name }}
                   </td>
                   <td>
                       {{ res.get_status_display }}

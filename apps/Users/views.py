@@ -114,21 +114,22 @@ class UserDetailView(UpdateView):
     template_name = 'Users/user-form.html'
     form_class = UserDetailForm
 
-
+# TODO: Is the create view required? Also the password set through this is not
+# getting hashed. Evaluate what changes are required for this.
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     # This CBV expects a template named user_form.html. Overriding.
     template_name = 'Users/user-form.html'
-    fields = ['username', 'email', 'password', 'org']
+    fields = ['name', 'email', 'password', 'org']
 
     def form_valid(self, form):
         return super().form_valid(form)
 
-
+# TODO: Should be allow the user to update the password from this view?
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     template_name = 'Users/user-form.html'
-    fields = ['username', 'email', 'org']
+    fields = ['name', 'email', 'org']
 
     def form_valid(self, form):
         return super().form_valid(form)
