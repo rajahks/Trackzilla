@@ -6,6 +6,13 @@ User = get_user_model()
 
 
 class UserAdmin(BaseUserAdmin):
+    """
+    Custom ModelAdmin class to show our Custom User Model in Admin Panel.
+    Without this the fields in User Model are shown randomly in the Admin Page. 
+    This also allows us to define sections that we wish to show.
+    The ModelAdmin and Model are linked to each other in the 'admin.site.register' call.
+    """
+    
     fieldsets = (
         (None, {'fields': ('email', 'password', 'name', 'last_login')}),
         ('Organization', {'fields':('org',)}),
