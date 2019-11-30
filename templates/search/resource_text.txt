@@ -1,5 +1,7 @@
 {{ object.name }}
-{{ object.current_user.username }}
-{{ object.device_admin.username }}
+{{ object.current_user.name }}
+{{ object.current_user.email }}
+{{ object.device_admin.name }}
+{{ object.device_admin.email }}
 {{ object.serial_num }}
 {{ object.description }}

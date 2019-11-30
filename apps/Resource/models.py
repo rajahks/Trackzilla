@@ -1,14 +1,15 @@
 from django.db import models
-from apps.Users.models import AssetUser
 from apps.Organization.models import Org
 from django.urls import reverse
-
+from django.contrib.auth import get_user_model
 from apps.ChangeHistory.middleware import _get_django_request
 from apps.ChangeHistory.models import ChangeHistoryMixin
 
 import logging
 logger = logging.getLogger(__name__)
 
+#Get the current custom User Model.
+User = get_user_model()
 
 def CustomProcessDictHook(instance, object_dict, *args, **kwargs):
     """Hook function which will be set to the field 'history__process_dict_hook'
@@ -24,7 +25,7 @@ def CustomProcessDictHook(instance, object_dict, *args, **kwargs):
             if hasattr(instance,field):
                 field_val = getattr(instance,field)
                 
-                if field_val is not None and issubclass(field_val.__class__, AssetUser):
+                if field_val is not None and issubclass(field_val.__class__, User):
                     object_dict[field] = field_val.get_username()
 
             # TODO: add other non-serializable field types or fields which need custom
@@ -63,14 +64,14 @@ class Resource( ChangeHistoryMixin, models.Model):
     # The resources should be moved out and only then the resource should be deleted.
     # We achieve this constraint by using the models.PROTECT constraint.
     # https://docs.djangoproject.com/en/2.2/ref/models/fields/#django.db.models.PROTECT
-    current_user = models.ForeignKey(AssetUser, on_delete=models.PROTECT,
+    current_user = models.ForeignKey(User, on_delete=models.PROTECT,
                                      related_name='res_being_used')
 
     # FK to the previous user of the device. The field is updated when the resource is
     # transferred from one person to another person. Current_user will be the one who to
     # whom the resource is assigned and the previous_user will be the one who previously
     # was using the resource.
-    previous_user = models.ForeignKey( AssetUser, on_delete=models.SET_NULL, blank=True,
+    previous_user = models.ForeignKey( User, on_delete=models.SET_NULL, blank=True,
                                        null=True, related_name='res_prev_used')
 
     # FK to the User who is currently managing the device.
@@ -79,7 +80,7 @@ class Resource( ChangeHistoryMixin, models.Model):
     # Like the 'current user' above we do not allow the Device Admin User object
     # to be deleted when he has Resources assigned to him.
     # Enforce the constraint.
-    device_admin = models.ForeignKey(AssetUser, on_delete=models.PROTECT,
+    device_admin = models.ForeignKey(User, on_delete=models.PROTECT,
                                      related_name='res_being_managed')
 
     # The related_name allows us to fetch the resource list from the User model itself. Very useful as we would mostly
@@ -115,7 +116,7 @@ class Resource( ChangeHistoryMixin, models.Model):
     # Every resource will belong to an Organisation. This way we can have
     # resources belonging to different orgs on the same DB and filter them
     # based on a logged in user's organization.
-    org_id = models.ForeignKey(Org, on_delete=models.PROTECT, null=True)
+    org = models.ForeignKey(Org, on_delete=models.PROTECT, null=True)
 
 
     # Configure the Hook functions used by ChangeHistoryMixin.

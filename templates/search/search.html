@@ -31,8 +31,8 @@
             {% for result in page_obj.object_list %}
                 <tr>
                     <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
-                    <td>{{ result.object.current_user.username }}</td>
-                    <td>{{ result.object.device_admin.username }}</td>
+                    <td>{{ result.object.current_user.name }}</td>
+                    <td>{{ result.object.device_admin.name }}</td>
                 </tr>
             {% endfor %}
             </table>

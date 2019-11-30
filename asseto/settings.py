@@ -83,6 +83,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'asseto.wsgi.application'
 
+# Letting Django know about the User model to use.
+# When needing to refer to this User model either use
+# 1) "from django.conf import settings" and then "settings.AUTH_USER_MODEL" will give the class name.
+# 2) "from django.contrib.auth import get_user_model" and then
+#     "User = get_user_model()". "User" now should have the model.
+AUTH_USER_MODEL = 'Users.AssetUser'
+
 # authentication backends for single sign on using social profiles
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.open_id.OpenIdAuth',  # for Google authentication

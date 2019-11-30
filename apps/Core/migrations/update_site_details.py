@@ -6,7 +6,8 @@ from django.conf import settings
 import logging
 logger = logging.getLogger(__name__)
 
-# TODO: Move this migration to the core app as this doesnot belong in the Users app.
+# TODO: Have moved it to the core app but it seems to be having a problem with
+# ('Users', '0001_initial') dependency . Will need to resolve this later.
 
 def update_site_name(apps, schema_editor):
     SiteModel = apps.get_model('sites', 'Site')
@@ -29,7 +30,7 @@ def delete_site_name(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Users', '0001_initial'),
+        # ('Users', '0001_initial'),
         ('sites', '0002_alter_domain_unique'), # Required to reference `sites` in `apps.get_model()`
     ]
 
