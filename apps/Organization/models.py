@@ -18,8 +18,12 @@ class Org(models.Model):
         return self.org_name
 
     def get_absolute_url(self):
-        return reverse("org-detail", kwargs={"pk": self.pk})
+        return reverse("Org:org-detail", kwargs={"pk": self.pk})
 
+    def get_join_link(self):
+        """Returns the link which can be used to join the organization.
+        """
+        return reverse('Org:org-join', kwargs={'pk':self.pk, 'OrgName':self.org_name})
 
 class Team(models.Model):
     team_name = models.CharField(max_length=50)
@@ -41,4 +45,4 @@ class Team(models.Model):
         return self.team_name
 
     def get_absolute_url(self):
-        return reverse("team-detail", kwargs={"pk": self.pk})
+        return reverse("Org:team-detail", kwargs={"pk": self.pk})

@@ -41,6 +41,7 @@ class AssetUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
 
     # The Org this user is part of. Do not allow deleting the parent Org if there are
+    # TODO: Should we allow the user to be part of more than one Org?
     org = models.ForeignKey('Organization.Org', on_delete=models.PROTECT, null=True, blank=True)
 
     USERNAME_FIELD = 'email'
