@@ -32,6 +32,7 @@ class OrgDetailView(UpdateView):
     model = Org
     template_name = 'Organization/org-form.html'
     form_class = OrgDetailForm
+    # TODO: Show the Join URL in the detail page.
 
 
 class OrgCreateView(LoginRequiredMixin, CreateView):
