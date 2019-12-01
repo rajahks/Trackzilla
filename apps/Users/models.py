@@ -62,6 +62,9 @@ class AssetUser(AbstractBaseUser, PermissionsMixin):
       """
       return self.name
 
+    def get_email(self):
+      return self.email
+
     def __str__(self):
       return self.name
 

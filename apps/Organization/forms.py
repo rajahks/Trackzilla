@@ -8,10 +8,12 @@ User = get_user_model()
 class OrgDetailForm(forms.ModelForm):
     org_name = forms.CharField(disabled=True)
     admin_id = forms.ModelChoiceField(queryset=User.objects.all(), disabled=True) # TODO: This should be Org specific.
+    allowed_email_domain = forms.CharField(disabled=True)
 
     class Meta:
         model = Org
-        fields = ['org_name', 'admin_id']
+        fields = ['org_name', 'admin_id', 'allowed_email_domain']
+
 
 
 class TeamDetailForm(forms.ModelForm):

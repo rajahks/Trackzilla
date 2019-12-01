@@ -10,8 +10,11 @@ from .models import Org, Team
 from .forms import OrgDetailForm, TeamDetailForm
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseForbidden
 
+# configure Logger
+import logging
+logger = logging.getLogger(__name__)
 
 def context(request):
     return render(request, 'Organization/org_context.html')
@@ -34,20 +37,35 @@ class OrgDetailView(UpdateView):
 class OrgCreateView(LoginRequiredMixin, CreateView):
     model = Org
     template_name = 'Organization/org-form.html'
-    fields = ['org_name', 'admin_id']
+    fields = ['org_name', 'admin_id', 'allowed_email_domain']
 
     def form_valid(self, form):
         return super().form_valid(form)
+
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        form = super(OrgCreateView, self).get_form(form_class)
+        form.fields['allowed_email_domain'].widget.attrs ={'placeholder': 'Ex: @test.com'}
+        return form
 
 
 class OrgUpdateView(LoginRequiredMixin, UpdateView):
     model = Org
     template_name = 'Organization/org-form.html'
-    fields = ['org_name', 'admin_id']
+    fields = ['org_name', 'admin_id', 'allowed_email_domain']
 
     def form_valid(self, form):
         return super().form_valid(form)
 
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        form = super(OrgUpdateView, self).get_form(form_class)
+        form.fields['allowed_email_domain'].widget.attrs ={'placeholder': 'Ex: @test.com'}
+        return form
 
 class OrgDeleteView(LoginRequiredMixin, DeleteView):
     model = Org
@@ -99,11 +117,18 @@ def OrgJoinView(request, pk, OrgName, *args, **kwargs):
         # Eg: @abc.com
         # This way we will prevent random ppl from joining the org even when the link leaks
         # outside an Org.
+        if not orgObj.is_email_allowed(loggedInUser.email):
+            logger.error("User %s was NOT allowed to join Org %s."%(loggedInUser.get_email(),OrgName))
+            return HttpResponseForbidden("You do not have permission to join this Organization")
 
         if loggedInUser.org is None:
             # User not part of any Org. Add to the Org.
+            # TODO: Should we have a workflow where the admin has to confirm and only then
+            # they will be added to the Org.
             loggedInUser.org = orgObj
             loggedInUser.save()
+            logger.info("User %s added to Org %s" %(loggedInUser.email, OrgName))
+            # TODO: Send an email or notify the admin that a new user has been added.
             return HttpResponse("User %s added to org %s" %
                 (loggedInUser.name, loggedInUser.org.org_name)) #TODO: Change to template.
         elif loggedInUser.org is not None and loggedInUser.org == orgObj:
