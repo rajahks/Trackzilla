@@ -5,6 +5,7 @@ from .views import (
     OrgDeleteView,
     OrgDetailView,
     OrgUpdateView,
+    OrgJoinView,
     TeamDetailView,
     TeamCreateView,
     TeamDeleteView,
@@ -13,11 +14,14 @@ from .views import (
 
     # TODO: All these urls needs to be ORG specific. Revisit and revise the urls.
 
+app_name = 'Org'
+
 urlpatterns = [
     path('org/<int:pk>/', OrgDetailView.as_view(), name='org-detail'),
     path('org/new/', OrgCreateView.as_view(), name='org-create'),
     path('org/<int:pk>/update/', OrgUpdateView.as_view(), name='org-update'),
     path('org/<int:pk>/delete/', OrgDeleteView.as_view(), name='org-delete'),
+    path('org/join/<int:pk>/<slug:OrgName>', OrgJoinView, name='org-join'),
     path('team/<int:pk>/', TeamDetailView.as_view(), name='team-detail'),
     path('team/new/', TeamCreateView.as_view(), name='team-create'),
     path('team/<int:pk>/update/', TeamUpdateView.as_view(), name='team-update'),
