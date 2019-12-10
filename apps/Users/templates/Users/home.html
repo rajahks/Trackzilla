@@ -1,10 +1,27 @@
 {% extends "Generic/base_sidebar.html" %}
+
+{% block OrgList %}
+  {% if user.org %}
+    <i class="fas fa-sitemap"></i><a href="{{ user.org.get_absolute_url }} "> {{ user.org.org_name }}</a>
+    <!-- TODO: In future this should be a drop down list allowing the user to switch across orgs. -->
+  {% else %}
+    <i>You are not part of any Org yet. Create a new one or join an existing one!</i>
+  {% endif %}
+{% endblock OrgList %}
+
+{% block TeamList %}
+  {% if user.team_member_of.all %}
+    {% for team in user.team_member_of.all  %}
+      <li class="p-1"><i class="fas fa-users"></i><a href=" {{ team.get_absolute_url }} "> {{ team }} </a></li>
+    {% endfor %}
+  {% else %}
+    <i>You are part of any Teams yet. Create a new one or join an existing one!</i>
+  {% endif %}
+{% endblock TeamList %}
+
 {% block content %}
 {% load staticfiles%}
 
-<!-- TODO: Hackfest Addition. Needs revision. -->
-
-<div class="col-md-8">
 <div class="jumbotron">
     <h2>Hello {{user.name}}, welcome to Trackzilla!</h2>
     <i>The only tool you need to track them all!</i>
@@ -40,42 +57,45 @@
 
 <br>
 
-{% if inUseList|length %}
 <!-- We need to show the Resources which are in the users name and have been ackd -->
 <div class="card">
     <div class="card-header"><strong>Resources you are using</strong></div>
     <div class="card-body">
-        <table class="table table-borderless table-sm">
-          <tbody>
-            {% for inUseEntry_dict in inUseList %}
-              <tr>
-                  <td>
-                    <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
-                    <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
-                    <a href="{{inUseEntry_dict.detail_url}}">
-                        {{ inUseEntry_dict.name }}
-                    </a>
-                  </td>
-                  <td align="right">
-                    <a href="{{inUseEntry_dict.update_url}}" class="btn btn-outline-primary btn-sm">Reassign</a>
-                  </td>
-                </tr>
-            {% endfor %}
-          </tbody>
-          </table>
+        {% if inUseList|length %}
+          <table class="table table-borderless table-sm">
+            <tbody>
+              {% for inUseEntry_dict in inUseList %}
+                <tr>
+                    <td>
+                      <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
+                      <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                      <a href="{{inUseEntry_dict.detail_url}}">
+                          {{ inUseEntry_dict.name }}
+                      </a>
+                    </td>
+                    <td align="right">
+                      <a href="{{inUseEntry_dict.update_url}}" class="btn btn-outline-primary btn-sm">Reassign</a>
+                    </td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+            </table>
+        {% else %}
+          <i>You do not have any resources assigned to you.</i>
+        {% endif %}
     </div>
 </div>
-{% endif %}
+
 
 <br>
 
-{% if teamResourceDict|length %}
 <!-- We need to show the Resources which are in all the teams the user is part of -->
 <!-- teamResourceDict is a dictionary with keys corresponding to team names and values
      would be a list of resources -->
 <div class="card">
     <div class="card-header"><strong>Resources in your teams</strong></div>
     <div class="card-body">
+        {% if teamResourceDict|length %}
         <table class="table table-borderless table-sm">
           <thead>
             <th>Resource Name</th>
@@ -105,9 +125,14 @@
             {% endfor %}
           </tbody>
           </table>
+        {% else %}
+          <i> Either you are not part of any team or there are no resources assigned to
+            any members of your team.
+          </i>
+        {% endif %}
     </div>
 </div>
-{% endif %}
+
 
 <br>
 
