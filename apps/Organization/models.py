@@ -64,7 +64,7 @@ class Org(models.Model):
             return False
 
         emailDomain = email_id[sepPos:]
-        if emailDomain.lower() == self.allowed_email_domain.lower():
+        if emailDomain.lower().strip() == self.allowed_email_domain.lower().strip():
             logger.info("User %s allowed to join Org %s"%(email_id, self.org_name))
             return True
         else:
