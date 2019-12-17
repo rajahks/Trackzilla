@@ -80,7 +80,7 @@ class Team(models.Model):
     team_admins = models.ManyToManyField(User, related_name='team_admin_for', blank=True)
 
     # Org to which the team belongs. Do not allow the parent Org to be deleted if there are teams in it.
-    org = models.ForeignKey(Org, on_delete=models.PROTECT)
+    org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name='team_set')
 
     # Teams are recursive. One team can contain multiple teams within itself.
     sub_teams = models.ManyToManyField('self', related_name='sub_team_list', blank=True)

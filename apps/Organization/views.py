@@ -4,6 +4,7 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
+from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from .models import Org, Team
@@ -16,10 +17,6 @@ from django.http import Http404, HttpResponse, HttpResponseForbidden
 import logging
 logger = logging.getLogger(__name__)
 
-def context(request):
-    return render(request, 'Organization/org_context.html')
-
-
 def teams_list(request):
     context = {
         'teams': Team.objects.all()   #TODO: This has to be org specific.
@@ -28,12 +25,16 @@ def teams_list(request):
 
 
 # CRUD views for Org
-class OrgDetailView(UpdateView):
-    model = Org
-    template_name = 'Organization/org-form.html'
-    form_class = OrgDetailForm
-    # TODO: Show the Join URL in the detail page.
 
+# TODO: We need to have something like HasPermissionMixin to even check if the user has
+# permission to access a view. In our case, only a user belonging to the Org should be able
+# to view details.
+
+class OrgDetailView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        orgObject = get_object_or_404(Org,id=pk)
+        context = { 'Org': orgObject}
+        return render(request, 'Organization/org_context.html', context=context)
 
 class OrgCreateView(LoginRequiredMixin, CreateView):
     model = Org
@@ -50,7 +51,12 @@ class OrgCreateView(LoginRequiredMixin, CreateView):
         form = super(OrgCreateView, self).get_form(form_class)
         form.fields['allowed_email_domain'].widget.attrs ={'placeholder': 'Ex: @test.com'}
         return form
+# TODO: Creating new Org with name having spaces fails as getting the join link of that fails.
+# Getting join list fails as it expects name to be a slug but this may not be the case.
 
+# TODO: When a user creates an Org, he should be set as the admin of the org and the FK value
+# in the User object should be updated on save. This leads to another problem where a User
+# could create multiple orgs. This would mean it should be ManyToManyField 
 
 class OrgUpdateView(LoginRequiredMixin, UpdateView):
     model = Org

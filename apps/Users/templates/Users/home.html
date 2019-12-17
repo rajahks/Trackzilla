@@ -109,7 +109,7 @@
                     <td>
                       <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
                       <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
-                      <a href="{% url 'resource-detail' pk=res.id %}">
+                      <a href="{% url 'Resource:resource-detail' pk=res.id %}">
                           {{ res.name }}
                       </a>
                     </td>
@@ -156,7 +156,7 @@
                   <td>
                     <!-- <img src="{% static 'Generic/device_colour.png' %}" width="24" height="24" alt="">&nbsp;&nbsp;&nbsp;</img> -->
                     <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
-                    <a href="{% url 'resource-detail' pk=res.pk %}">
+                    <a href="{% url 'Resource:resource-detail' pk=res.pk %}">
                         {{ res.name }}
                     </a>
                   </td>
