@@ -38,7 +38,7 @@ class OrgDetailView(UpdateView):
 class OrgCreateView(LoginRequiredMixin, CreateView):
     model = Org
     template_name = 'Organization/org-form.html'
-    fields = ['org_name', 'admin_id', 'allowed_email_domain']
+    fields = ['org_name', 'admin', 'allowed_email_domain']
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -55,7 +55,7 @@ class OrgCreateView(LoginRequiredMixin, CreateView):
 class OrgUpdateView(LoginRequiredMixin, UpdateView):
     model = Org
     template_name = 'Organization/org-form.html'
-    fields = ['org_name', 'admin_id', 'allowed_email_domain']
+    fields = ['org_name', 'admin', 'allowed_email_domain']
 
     def form_valid(self, form):
         return super().form_valid(form)
