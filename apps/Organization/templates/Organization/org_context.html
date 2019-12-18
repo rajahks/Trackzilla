@@ -46,7 +46,7 @@
                   <td> <a href="{{ res.device_admin.get_absolute_url }}"> {{ res.device_admin }}</a> </td>
                   <td>
                     {% for team in res.current_user.team_member_of.all %}
-                    <a href="{{ team.get_absolute_url }}">{{ team.team_name }}</a>,
+                      <a href="{{ team.get_absolute_url }}">{{ team.team_name }}</a>,
                     {% endfor %}
                   </td>
                 </tr>
@@ -78,7 +78,9 @@
                   <td>{{ user.get_email }}</td>
                   <td>
                     {% for team in user.team_member_of.all %}
-                    <a href="{{ team.get_absolute_url }}">{{ team.team_name }}</a>,
+                      <a href="{{ team.get_absolute_url }}">{{ team.team_name }}</a>,
+                    {% empty %}
+                      Not part of any team.
                     {% endfor %}
                   </td>
                 </tr>
