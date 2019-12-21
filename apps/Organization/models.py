@@ -14,7 +14,7 @@ class Org(models.Model):
 
     # Admin for the Org. Generally the person who creates the org.
     # Do not allow the user to be deleted if he is an admin of any Org
-    admin_id = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name="adminForOrg")
+    admin = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name="adminForOrg")
 
     # As the join link could be leaked outside an org, we do not want people outside an
     # org to join the Org. So we allow the admin to specify the domain names to allow.
@@ -80,7 +80,7 @@ class Team(models.Model):
     team_admins = models.ManyToManyField(User, related_name='team_admin_for', blank=True)
 
     # Org to which the team belongs. Do not allow the parent Org to be deleted if there are teams in it.
-    org = models.ForeignKey(Org, on_delete=models.PROTECT)
+    org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name='team_set')
 
     # Teams are recursive. One team can contain multiple teams within itself.
     sub_teams = models.ManyToManyField('self', related_name='sub_team_list', blank=True)

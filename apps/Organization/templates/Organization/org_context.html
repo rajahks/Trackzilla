@@ -1,11 +1,156 @@
 {% extends "Generic/base.html" %}
 {% block content %}
-    <nav class="nav nav-tabs nav-fill">
-    <a href="{% url 'teams-list' %}" class="nav-item nav-link active">Teams</a>
-    <a href="{% url 'people-list' %}" class="nav-item nav-link">People</a>
-    <a href="{% url 'resources-list' %}" class="nav-item nav-link">Resources</a>
-    <a href="#" class="nav-item nav-link" tabindex="-1">Settings</a>
+
+<h2><i class="fas fa-sitemap"></i> {{Org.org_name}}</h2>
+<br><br>
+<div class="card">
+  <div class="card-header">
+    <nav>
+      <div class="nav nav-tabs card-header-tabs" id="nav-tab" role="tablist">
+        <a class="nav-item nav-link active" id="nav-home-tab" data-toggle="tab" href="#nav-resources" role="tab"> <i
+            class="fas fa-laptop"></i> Resources</a>
+        <a class="nav-item nav-link" id="nav-profile-tab" data-toggle="tab" href="#nav-people" role="tab"> <i
+            class="fas fa-users"></i> People</a>
+        <a class="nav-item nav-link" id="nav-contact-tab" data-toggle="tab" href="#nav-teams" role="tab"><i
+            class="fas fa-th-large"></i> Teams</a>
+        <a class="nav-item nav-link" id="nav-contact-tab" data-toggle="tab" href="#nav-settings" role="tab"><i
+            class="fas fa-cog"></i> Settings</a>
+      </div>
     </nav>
-{% block view_content %}
-{% endblock view_content %}
+  </div>
+  <div class="card-body p-0">
+    <div class="tab-content" id="nav-tabContent">
+      <div class="tab-pane fade show active" id="nav-resources" role="tabpanel">
+        <!-- Add a search button and also button to create new resource -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <p class="mb-0"> {{ Org.resource_set.count }} resource{{ Org.resource_set.count|pluralize }} in
+              {{ Org.org_name }} Organization </p>
+            <a href="{%url 'Resource:resource-create' %}" class="btn btn-sm btn-success">New Resource</a>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Current User</th>
+                  <th scope="col">Device Admin</th>
+                  <th scope="col">Team</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for res in Org.resource_set.all %}
+                <tr>
+                  <th scope="row"> <a href="{{ res.get_absolute_url }} ">{{ res.name }} </a></th>
+                  <td><a href="{{ res.current_user.get_absolute_url }}">{{ res.current_user }}</a></td>
+                  <td> <a href="{{ res.device_admin.get_absolute_url }}"> {{ res.device_admin }}</a> </td>
+                  <td>
+                    {% for team in res.current_user.team_member_of.all %}
+                      <a href="{{ team.get_absolute_url }}">{{ team.team_name }}</a>,
+                    {% endfor %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="nav-people" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <p class="mb-0"> {{ Org.user_set.count }} {{ Org.user_set.count|pluralize:"person,people" }} in
+              {{ Org.org_name }} Organization </p>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Teams</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in Org.user_set.all %}
+                <tr>
+                  <th scope="row"> <a href="{{ user.get_absolute_url }} ">{{ user.name }} </a></th>
+                  <td>{{ user.get_email }}</td>
+                  <td>
+                    {% for team in user.team_member_of.all %}
+                      <a href="{{ team.get_absolute_url }}">{{ team.team_name }}</a>,
+                    {% empty %}
+                      Not part of any team.
+                    {% endfor %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="nav-teams" role="tabpanel">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <p class="mb-0"> {{ Org.team_set.count }} team{{Org.team_set.count|pluralize}} in {{ Org.org_name }}
+              Organization </p>
+            <a href="{%url 'Org:team-create' %}" class="btn btn-sm btn-success">New Team</a>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <tbody>
+                {% for team in Org.team_set.all %}
+                <tr>
+                  <th scope="row"> <a href="{{ team.get_absolute_url }} ">{{ team.team_name }} </a></th>
+                  <td>{{ team.team_members.count }} member{{ team.team_members.count|pluralize }}</td>
+                  <td>{{ team.sub_teams.count }} sub-team{{team.sub_teams.count|pluralize}}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="nav-settings" role="tabpanel">
+        <div class="card">
+          <div class="card-body">
+            <label for="copyUrl"><strong>Join Link</strong></label>
+            <p>Share the join link with people who have to join the Organization.<br> Once
+              they visit the link, they will be added to the Organization if they meet
+              the allow list criteria.
+            </p>
+            <div class="input-group mb-3">
+              <input type="text" class="form-control" placeholder=""
+                value="{% if request.is_secure %}https://{% else %}http://{% endif %}{{ request.get_host }}{{ Org.get_join_link }}"
+                id="copyUrl" readonly> </input>
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button">Copy</button>
+              </div>
+            </div>
+
+            <hr>
+            <label for="allowedEmailDomain"><strong>Allowed email domain</strong></label>
+            <p>If a value is specified, then only users with email id of that domain
+              will be allowed to join. This allows an admin to easily restrict access
+              to people not belonging to the Organization.
+            </p>
+            <input type="text" id="allowedEmailDomain" value="{{Org.allowed_email_domain}}" class="form-control"
+              readonly>
+
+            <hr>
+            <label for="adminName"><strong>Organization Admin</strong></label>
+            <p>Administrator name and email for this Organization.
+            </p>
+            <input type="text" id="adminName" value="{{ Org.admin.get_name }} <{{Org.admin.get_email}}>"
+              class="form-control" readonly>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 {% endblock content %}

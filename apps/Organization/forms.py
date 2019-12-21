@@ -5,14 +5,16 @@ from django.contrib.auth import get_user_model
 #Get the current custom User Model.
 User = get_user_model()
 
+# TODO: The OrgDetail page no longer uses this form. Review and remove this later once
+# the new detail page is stable.
 class OrgDetailForm(forms.ModelForm):
     org_name = forms.CharField(disabled=True)
-    admin_id = forms.ModelChoiceField(queryset=User.objects.all(), disabled=True) # TODO: This should be Org specific.
+    admin = forms.ModelChoiceField(queryset=User.objects.all(), disabled=True) # TODO: This should be Org specific.
     allowed_email_domain = forms.CharField(disabled=True)
 
     class Meta:
         model = Org
-        fields = ['org_name', 'admin_id', 'allowed_email_domain']
+        fields = ['org_name', 'admin', 'allowed_email_domain']
 
 
 

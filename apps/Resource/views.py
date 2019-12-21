@@ -175,7 +175,7 @@ class ResourceUpdateView(LoginRequiredMixin, UpdateView):
             resource.save()
 
         # On successfull update, redirect to the detail page.
-        return redirect('resource-detail',pk=resource.pk)
+        return redirect('Resource:resource-detail',pk=resource.pk)
 
     # def test_func(self):
     #     resource = self.get_object()

@@ -116,7 +116,7 @@ class Resource( ChangeHistoryMixin, models.Model):
     # Every resource will belong to an Organisation. This way we can have
     # resources belonging to different orgs on the same DB and filter them
     # based on a logged in user's organization.
-    org = models.ForeignKey(Org, on_delete=models.PROTECT, null=True)
+    org = models.ForeignKey(Org, on_delete=models.PROTECT, null=True, related_name='resource_set')
 
 
     # Configure the Hook functions used by ChangeHistoryMixin.
@@ -132,10 +132,10 @@ class Resource( ChangeHistoryMixin, models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("resource-detail", kwargs={"pk": self.pk})
+        return reverse("Resource:resource-detail", kwargs={"pk": self.pk})
 
     def get_update_url(self):
-        return reverse("resource-update", kwargs={"pk": self.pk})
+        return reverse("Resource:resource-update", kwargs={"pk": self.pk})
 
     def get_acknowledge_url(self):
         """Called from a view to fetch the url which can be used to ack owning the device. 

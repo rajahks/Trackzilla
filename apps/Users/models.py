@@ -42,7 +42,8 @@ class AssetUser(AbstractBaseUser, PermissionsMixin):
 
     # The Org this user is part of. Do not allow deleting the parent Org if there are
     # TODO: Should we allow the user to be part of more than one Org?
-    org = models.ForeignKey('Organization.Org', on_delete=models.PROTECT, null=True, blank=True)
+    org = models.ForeignKey('Organization.Org', on_delete=models.PROTECT, null=True,
+            blank=True, related_name='user_set')
 
     USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
