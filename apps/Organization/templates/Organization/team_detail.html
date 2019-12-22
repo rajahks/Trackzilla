@@ -7,7 +7,7 @@
   <div class="card-header">
     <nav>
       <div class="nav nav-tabs card-header-tabs" id="nav-tab" role="tablist">
-        <a class="nav-item nav-link" id="nav-members-tab" data-toggle="tab" href="#nav-members" role="tab"> <i
+        <a class="nav-item nav-link active" id="nav-members-tab" data-toggle="tab" href="#nav-members" role="tab"> <i
             class="fas fa-users"></i> Members</a>
         <a class="nav-item nav-link" id="nav-subteams-tab" data-toggle="tab" href="#nav-subteams" role="tab"><i
             class="fas fa-th-large"></i> Sub-Teams</a>
@@ -101,7 +101,7 @@
               <strong>Danger Zone</strong> <br>
               <a href="{%url 'Org:team-delete' pk=teamObj.pk %}" class="btn btn-outline-danger m-3">Delete Team</a>
             {% else %}
-              <i>To make changes to the team contact the admin.</i>
+              <i>To make changes to the team, contact the admin.</i>
             {% endif %}
 
           </div>
