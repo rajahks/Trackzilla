@@ -146,11 +146,11 @@ def OrgJoinView(request, pk, OrgName, *args, **kwargs):
                 (loggedInUser.name, loggedInUser.org.org_name))
 
 # CRUD views for team
-class TeamDetailView(UpdateView):
-    model = Team
-    template_name = 'Organization/team-form.html'
-    form_class = TeamDetailForm
-
+class TeamDetailView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        teamObj = get_object_or_404(Team,id=pk)
+        context = { 'teamObj': teamObj}
+        return render(request, 'Organization/team_detail.html', context=context)
 
 class TeamCreateView(LoginRequiredMixin, CreateView):
     model = Team

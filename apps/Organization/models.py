@@ -75,9 +75,13 @@ class Org(models.Model):
 class Team(models.Model):
     team_name = models.CharField(max_length=50)
 
+    team_description = models.CharField(max_length=200, blank=True)
+
     # Admins for the team. Yes, a team can have multiple admins. However only a member of this
-    # team must be allowed be added to this list.
-    team_admins = models.ManyToManyField(User, related_name='team_admin_for', blank=True)
+    # team must be allowed be added to this list. Every team must have atleast one admin
+    # TODO: Make sure during create, the user who is creating is made the admin of the team
+    # automatically
+    team_admins = models.ManyToManyField(User, related_name='team_admin_for')
 
     # Org to which the team belongs. Do not allow the parent Org to be deleted if there are teams in it.
     org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name='team_set')
