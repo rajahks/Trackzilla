@@ -1,0 +1,114 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+
+<h2><i class="fas fa-th-large"></i> {{teamObj.team_name}}</h2>
+<br><br>
+<div class="card">
+  <div class="card-header">
+    <nav>
+      <div class="nav nav-tabs card-header-tabs" id="nav-tab" role="tablist">
+        <a class="nav-item nav-link active" id="nav-members-tab" data-toggle="tab" href="#nav-members" role="tab"> <i
+            class="fas fa-users"></i> Members</a>
+        <a class="nav-item nav-link" id="nav-subteams-tab" data-toggle="tab" href="#nav-subteams" role="tab"><i
+            class="fas fa-th-large"></i> Sub-Teams</a>
+        <a class="nav-item nav-link" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab"><i
+            class="fas fa-cog"></i> Settings</a>
+      </div>
+    </nav>
+  </div>
+  <div class="card-body p-0">
+    <div class="tab-content" id="nav-tabContent">
+      <div class="tab-pane fade show active" id="nav-members" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <p class="mb-0"> {{ teamObj.team_members.count }} member{{ teamObj.team_members.count|pluralize:",s" }} in
+              {{ teamObj.team_name }} Team </p>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in teamObj.team_members.all %}
+                <tr>
+                  <th scope="row"> <a href="{{ user.get_absolute_url }} ">{{ user.name }} </a></th>
+                  <td>{{ user.get_email }}</td>
+                  <td>
+                      Member
+                    <!-- {% if user in teamObj.team_admins.all %}
+                      Admin
+                    {% endif %} -->
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="nav-subteams" role="tabpanel">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <p class="mb-0"> {{ teamObj.sub_teams.count }} sub-team{{teamObj.sub_teams.count|pluralize}} in {{ teamObj.team_name }}
+              Team </p>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <tbody>
+                {% for subteam in teamObj.sub_teams.all %}
+                <tr>
+                  <th scope="row"> <a href="{{ subteam.get_absolute_url }} ">{{ subteam.team_name }} </a></th>
+                  <td>{{ subteam.team_members.count }} member{{ subteam.team_members.count|pluralize }}</td>
+                  <td>{{ subteam.sub_teams.count }} sub-team{{team.sub_teams.count|pluralize}}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="nav-settings" role="tabpanel">
+        <div class="card">
+          <div class="card-body">
+            <div>
+              <strong>Team Admins</strong>
+              <table class="table">
+                <tbody>
+                  {% for admin in teamObj.team_admins.all %}
+                  <tr>
+                    <th scope="row"> <a href="{{ user.get_absolute_url }} ">{{ admin.name }} </a></th>
+                    <td>{{ admin.get_email }}</td>
+                    <td>
+                        Admin
+                    </td>
+                  </tr>
+                  {% empty %}
+                    <br><i>Team does not have any Admins! </i>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <hr>
+            {% if request.user in teamObj.team_admins.all %}
+              <strong>Change Team Settings</strong> <br>
+              <a href="{%url 'Org:team-update' pk=teamObj.pk %}" class="btn btn-outline-success m-3">Edit Settings</a>
+              <hr>
+              <strong>Danger Zone</strong> <br>
+              <a href="{%url 'Org:team-delete' pk=teamObj.pk %}" class="btn btn-outline-danger m-3">Delete Team</a>
+            {% else %}
+              <i>To make changes to the team, contact the admin.</i>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

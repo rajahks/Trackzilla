@@ -145,6 +145,17 @@
             <input type="text" id="adminName" value="{{ Org.admin.get_name }} <{{Org.admin.get_email}}>"
               class="form-control" readonly>
 
+            <hr>
+            {% if request.user == Org.admin  %}
+              <strong>Change Team Settings</strong> <br>
+              <a href="{%url 'Org:org-update' pk=Org.pk %}" class="btn btn-outline-success m-3">Edit Settings</a>
+              <hr>
+              <strong>Danger Zone</strong> <br>
+              <a href="{%url 'Org:org-delete' pk=1 %}" class="btn btn-outline-danger m-3">Delete Org</a>
+            {% else %}
+              <i>To make changes to the org, contact the admin.</i>
+            {% endif %}
+
           </div>
         </div>
       </div>
