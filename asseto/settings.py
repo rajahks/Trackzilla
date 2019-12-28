@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.ChangeHistory.middleware.RequestMiddleware',
+    'apps.Users.middleware.CurrentOrgMiddleware',
 ]
 
 ROOT_URLCONF = 'asseto.urls'

@@ -2,13 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 # For the resource update view
-from django.contrib.auth import get_user_model # Current user model
+from django.contrib.auth import get_user_model  # Current user model
 from django.shortcuts import redirect
 
 # Haystack imports for Search
 from haystack.generic_views import SearchView
 from haystack.query import SearchQuerySet
-from haystack.forms import SearchForm, ModelSearchForm
+from haystack.forms import SearchForm
 # Imports for autocomplete
 import simplejson as json
 
@@ -21,17 +21,21 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from apps.Users.mixin import UserHasAccessToResourceMixin
 
-#Imports required for Mail
+# Imports required for Mail
 from django.core import mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.mail import EmailMessage
 
 # imports required for acknowledge and deny views
-from .models import Resource
 from django.http import HttpResponseForbidden, Http404
 from django.contrib.auth.decorators import login_required
+
+from .forms import ResourceCreateForm
+from django.views import View
+from apps.Users.middleware import get_current_org
 
 # Logging
 import logging
@@ -74,7 +78,7 @@ class ResourceSearchView(SearchView):
 
         spell_suggestion = self.get_form().get_suggestion()
         query = context['query']
-        if spell_suggestion != None and query.casefold() != spell_suggestion.casefold():
+        if spell_suggestion is not None and query.casefold() != spell_suggestion.casefold():
             context['spell_suggestion'] = spell_suggestion  # Can this ever be a list?
 
         return context
@@ -92,24 +96,37 @@ def autocomplete(request):
     return HttpResponse(the_data, content_type='application/json')
 
 
-class ResourceDetailView(UpdateView):
+class ResourceDetailView(LoginRequiredMixin, UserHasAccessToResourceMixin, UpdateView):
     model = Resource
     template_name = 'Resource/resource-form.html'   # <app>/<model>_<viewtype>.html
     form_class = ResourceDetailForm
 
 
-class ResourceCreateView(LoginRequiredMixin, CreateView):
-    model = Resource
-    # This CBV expects a template named resource_form.html. Overriding.
-    template_name = 'Resource/resource-form.html'
-    # CreateView class will automatically display for us a form asking for these fields.
-    # TODO : Should we ask for device_admin or automatically set it to the logged in user?
-    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
+class ResourceCreateView(LoginRequiredMixin, View):
 
-    def form_valid(self, form):
-        # TODO : Add this if we're automatically setting device admin.
-        # form.instance.device_admin = self.request.user
-        return super().form_valid(form)
+    def get(self, request, *args, **kwargs):
+        current_org = get_current_org()
+        resource_form = ResourceCreateForm(in_org=current_org)
+        context = {'form': resource_form, 'org': current_org}
+        return render(request, 'Resource/resource-form.html', context=context)
+
+    def post(self, request, *args, **kwargs):
+        current_org = get_current_org()
+        resource_form = ResourceCreateForm(request.POST, in_org=current_org)
+        if resource_form.is_valid():
+            resource_obj = resource_form.save(commit=False)
+            resource_obj.org = current_org
+            resource_obj.status = Resource.RES_ASSIGNED
+            # Finally save the object into the DB
+            resource_obj.save()
+            # TODO: A mail has to be sent to the device admin that a new resource was added
+            # and also that the resource has been assigned to him.
+            context = {'device': resource_obj}
+            return render(request, 'Resource/resource-creation-success.html', context=context)
+        else:
+            # Form is invalid. Display the form back to user with errors.
+            context = {'form': resource_form, 'org': current_org}
+            return render(request, 'Resource/resource-form.html', context=context)
 
 
 # TODO: Since we can have a Multi tenant app, we should check if the user has access to 
@@ -214,12 +231,12 @@ def sendAssignmentMail( from_email, to_email, cur_user, prev_user,
         int -- 1 for success and 0 for failure. (value returned by send_mail api)
     """
 
-    subject =  device_name + " asssigned"
+    subject = device_name + " asssigned"
 
-    context = { 'cur_user':cur_user, 'device_name': device_name,
-                'prev_user': prev_user, 'ack_link': ack_link,
-                'decline_link': decline_link,
-              }
+    context = {'cur_user': cur_user, 'device_name': device_name,
+               'prev_user': prev_user, 'ack_link': ack_link,
+               'decline_link': decline_link,
+               }
     html_message = render_to_string('mail/assigned.html', context )
     plain_message = strip_tags(html_message)
 

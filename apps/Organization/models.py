@@ -72,6 +72,10 @@ class Org(models.Model):
                 (email_id, self.org_name, self.allowed_email_domain))
             return False
 
+    def get_name(self):
+        return self.org_name
+
+
 class Team(models.Model):
     team_name = models.CharField(max_length=50)
 

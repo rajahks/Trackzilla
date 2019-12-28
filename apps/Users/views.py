@@ -11,29 +11,44 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from apps.Resource.models import Resource
-
-# Fetch the current configured User model.
-User = get_user_model()
+from .middleware import get_current_org
 
 import logging
 logger = logging.getLogger(__name__)
 
+# Fetch the current configured User model.
+User = get_user_model()
+
+
 @login_required
 def home(request):
     """Users  landing page
-    
+
     Arguments:
         request {[type]} -- [description]
-    
+
     Returns:
         [type] -- [description]
     """
+
+    # A user could belong to multiple Orgs. We need to restrict all the information based
+    # on an org. When a user first logs in, show the first org in the list.
+    # Once he selects it, save the value in a thread local variable. Change this variable
+    # when the user selects a different Org from the Org context dropdown
+
+    # The current org is saved in thread local variable called CURRENT_ORG.
+    cur_org = get_current_org()
+    logger.debug("Displaying home page for Org:%s User%s" %
+                 (cur_org, request.user))
+
+    # First filter all the resources based on the current chosen Org
+    resources_in_org = Resource.objects.filter(org=cur_org)
 
     # Right pane - block 1 - Resources needing action. We need to fetch the list of devices
     # which the users needs to ack or deny
     # Send this as a list as part of dict
     needActionList = []
-    resNeedActionQset = Resource.objects.filter(current_user__id=request.user.id).filter(status='R_ASS') #TODO: Use macro instead of R_ASS
+    resNeedActionQset = resources_in_org.filter(current_user__id=request.user.id).filter(status=Resource.RES_ASSIGNED)
     for res in resNeedActionQset:
         needActEntryDict = {}
         needActEntryDict['name'] = res.name
@@ -46,7 +61,7 @@ def home(request):
 
     # Right Pane - block 2 - Resources in your name and acknowledged
     inUseList = []
-    resInUseQset = Resource.objects.filter(current_user__id=request.user.id).filter(status='R_ACK')
+    resInUseQset = resources_in_org.filter(current_user__id=request.user.id).filter(status=Resource.RES_ACKNOWLEDGED)
     for res in resInUseQset:
         inUseEntryDict = {}
         inUseEntryDict['name'] = res.name
@@ -54,37 +69,36 @@ def home(request):
         inUseEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
         inUseList.append(inUseEntryDict)
 
-    # Resources in you teams
+    # Resources in you teams of the current Org.
     # Since user could be part of more than 1 team, we need to fetch all the teams he is part of
-    teamResourceDict = {} # List of resource objects in the team
+    teamResourceDict = {}  # List of resource objects in the team
     try:
         logged_in_user = User.objects.get(id=request.user.id)
-        team_list = logged_in_user.team_member_of.all()
+        team_list = logged_in_user.team_member_of.filter(org=cur_org)  # Filter based on currently selected Org.
         for team in team_list:
             teamResourceList = []
             # Find out all the members of the team
-            members = team.team_members.all()
-            # Now for each member we need to find all the resources he owns and 
+            members = team.team_members.filter(org=cur_org)
+            # Now for each member we need to find all the resources he owns and
             # then add it to the list
-            for member in members:
-                teamResourceList += member.res_being_used.all()
+            for member in members:  #TODO: Should we exclude the current user here?
+                teamResourceList += member.res_being_used.filter(org=cur_org)
 
             # Add the team resource list against the team name in teamResourceDict
             teamResourceDict[team.team_name] = teamResourceList
-    except:
+    except User.DoesNotExist:
         # The call User.objects.get can fail for root user created from command line
         # as it will not be part of the User table. Log the error as of now
         # TODO: Catch the right error and come up with a better way
-        logger.error("User.objects.get call failed for user %s id%d"%(request.user.get_username(),request.user.id))
+        logger.error("User.objects.get call failed for user %s id%d" % (request.user.get_username(), request.user.id))
 
     # Resources you are managing
-    resBeingManagedList = Resource.objects.filter(device_admin__id=request.user.id)
+    resBeingManagedList = resources_in_org.filter(device_admin__id=request.user.id)
 
-    context = { "needActionList" : needActionList,
-                "inUseList" : inUseList,
-                "teamResourceDict" : teamResourceDict,
-                "managedDeviceList" : resBeingManagedList,
-    }
+    context = {"needActionList": needActionList,
+               "inUseList": inUseList,
+               "teamResourceDict": teamResourceDict,
+               "managedDeviceList": resBeingManagedList, }
 
     return render(request, 'Users/home.html', context=context)
 

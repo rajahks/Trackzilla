@@ -3,8 +3,9 @@ from .models import Resource
 from apps.Organization.models import Org
 from django.contrib.auth import get_user_model
 
-#Get the current custom User Model.
+# Get the current custom User Model.
 User = get_user_model()
+
 
 class ResourceDetailForm(forms.ModelForm):
     name = forms.CharField(disabled=True)
@@ -18,3 +19,15 @@ class ResourceDetailForm(forms.ModelForm):
     class Meta:
         model = Resource
         fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
+
+
+class ResourceCreateForm(forms.ModelForm):
+
+    def __init__(self, *args, in_org, **kwargs):
+        super(ResourceCreateForm, self).__init__(*args, **kwargs)
+        self.fields['current_user'].queryset = in_org.user_set.all()
+        self.fields['device_admin'].queryset = in_org.user_set.all()
+
+    class Meta:
+        model = Resource
+        exclude = ['org', 'history', 'previous_user', 'status']  # org has to be set by the view to the user's current Org
