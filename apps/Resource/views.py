@@ -102,7 +102,7 @@ class ResourceDetailViewOld(LoginRequiredMixin, UserHasAccessToResourceMixin, Up
     form_class = ResourceDetailForm
 
 
-class ResourceDetailView(LoginRequiredMixin, View): #TODO: Add has permission mixin
+class ResourceDetailView(LoginRequiredMixin, UserHasAccessToResourceMixin, View): #TODO: Add has permission mixin
     """View which handles the detail view of a Resource.
     It queries the object and creates a custom form object ResourceDetailForm which
     makes all items readonly.
@@ -114,7 +114,7 @@ class ResourceDetailView(LoginRequiredMixin, View): #TODO: Add has permission mi
         return render(request, 'Resource/resource-detail.html', context=context)
 
 
-class ResourceHistoryView(LoginRequiredMixin, View):  #TODO: Add has permission mixin
+class ResourceHistoryView(LoginRequiredMixin, UserHasAccessToResourceMixin, View):  #TODO: Add has permission mixin
     """ View to handle showing the history of changes to a resource"""
 
     def get(self, request, *args, pk, **kwargs):
