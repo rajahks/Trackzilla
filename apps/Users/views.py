@@ -57,7 +57,7 @@ def home(request):
         needActEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
         needActionList.append(needActEntryDict)
 
-    #TODO: Show resources in conflict in a separate block
+    #TODO: Show resources in conflict(disputed state) in a separate block
 
     # Right Pane - block 2 - Resources in your name and acknowledged
     inUseList = []

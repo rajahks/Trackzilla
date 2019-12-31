@@ -104,15 +104,17 @@ class Resource(ChangeHistoryMixin, models.Model):
     RES_ACKNOWLEDGED = 'Acknowledged'
     RES_DISPUTE = 'Disputed'
 
+    # Choices to be shown to the user. In each tuple, left is what is saved in DB and
+    # right is shown to the user in drop down list.
     RES_STATUS_CHOICES = [
-        (RES_UNASSIGNED, 'Unassigned'),
+        # (RES_UNASSIGNED, 'Unassigned'),
         (RES_ASSIGNED, 'Assigned'),
         (RES_ACKNOWLEDGED, 'Acknowledged'),
         (RES_DISPUTE, 'Disputed')
     ]
 
     # TODO: Check if the states defined above are ok - should we have a conflicted/disputed status?
-    status = models.CharField(choices=RES_STATUS_CHOICES, default=RES_UNASSIGNED, max_length=20)
+    status = models.CharField(choices=RES_STATUS_CHOICES, default=RES_ASSIGNED, max_length=20)
 
     # Any additional information about the device to go into this field.
     description = models.TextField()

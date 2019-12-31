@@ -56,3 +56,25 @@ class ResourceCreateForm(forms.ModelForm):
         exclude = ['org', 'history', 'previous_user', 'status']
         # Org has to be set by the view to the user's current Org.
         # status will also be set to RES_ASSIGNED in the view.
+
+class ResourceUpdateForm(forms.ModelForm):
+    """ModelForm to Update a Resource. It removes few fields which the user wouldn't need
+    and also restricts the entries that will be shown to select the 'current_user' and
+    'device_admin'. They will be restricted to only have users pertaining to the current
+    org of the logged in user.
+    """
+    def __init__(self, *args, in_org, **kwargs):
+        """Accepts the keyword arg 'in_org' to restrict entries only to that org.
+
+        Arguments:
+            in_org {apps.Organization.models.Org} -- Org to which the resource belongs.
+        """
+        super(ResourceUpdateForm, self).__init__(*args, **kwargs)
+        self.fields['current_user'].queryset = in_org.user_set.all()
+        self.fields['device_admin'].queryset = in_org.user_set.all()
+
+    class Meta:
+        model = Resource
+        exclude = ['org', 'history', 'previous_user', 'status']
+        # Org has to be set by the view to the user's current Org.
+        # status will also be set to RES_ASSIGNED in the view.
