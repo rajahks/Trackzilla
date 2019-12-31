@@ -3,7 +3,7 @@ from django.http import HttpResponse
 
 # For the resource update view
 from django.contrib.auth import get_user_model  # Current user model
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 
 # Haystack imports for Search
 from haystack.generic_views import SearchView
@@ -96,21 +96,75 @@ def autocomplete(request):
     return HttpResponse(the_data, content_type='application/json')
 
 
-class ResourceDetailView(LoginRequiredMixin, UserHasAccessToResourceMixin, UpdateView):
+class ResourceDetailViewOld(LoginRequiredMixin, UserHasAccessToResourceMixin, UpdateView):
     model = Resource
     template_name = 'Resource/resource-form.html'   # <app>/<model>_<viewtype>.html
     form_class = ResourceDetailForm
 
 
+class ResourceDetailView(LoginRequiredMixin, View): #TODO: Add has permission mixin
+    """View which handles the detail view of a Resource.
+    It queries the object and creates a custom form object ResourceDetailForm which
+    makes all items readonly.
+    """
+    def get(self, request, *args, pk, **kwargs):
+        resource = get_object_or_404(Resource, pk=pk)
+        resource_form = ResourceDetailForm(instance=resource, org=resource.org)
+        context = {'form': resource_form, 'org': resource.org, 'resource': resource}
+        return render(request, 'Resource/resource-detail.html', context=context)
+
+
+class ResourceHistoryView(LoginRequiredMixin, View):  #TODO: Add has permission mixin
+    """ View to handle showing the history of changes to a resource"""
+
+    def get(self, request, *args, pk, **kwargs):
+        resource = get_object_or_404(Resource, pk=pk)
+        # Process the history records before showing them. We perform the following
+        # 1) Capitalize and replaces '_' with space like labels so that they look good.
+        # 2) Remove the 'previous_user' entry as it redundant. 'current_user' is enough
+        #    to see how the resource moved. 'previous_user' was only required to handle
+        #    sending 3 way mails when device in disputed state.
+        resource_history = resource.history
+        for resEntry in resource_history:
+            listOfChangeDict = resEntry['what']
+            for changeEntryDict in list(listOfChangeDict):
+                if changeEntryDict['field'] == 'previous_user':
+                    listOfChangeDict.remove(changeEntryDict)
+                    continue
+                # for other fields Capitalize the first letter and replace underscore
+                # with spaces.
+                formatted_field_name = changeEntryDict['field']
+                formatted_field_name = formatted_field_name.capitalize()
+                formatted_field_name = formatted_field_name.replace('_', ' ')
+                changeEntryDict['field'] = formatted_field_name
+
+        context = {'org': resource.org, 'resource': resource,
+            'history_list': resource_history}
+        return render(request, 'Resource/resource-history.html', context=context)
+
+
 class ResourceCreateView(LoginRequiredMixin, View):
+    """View to handle Resource Creation.
+
+    Arguments:
+        LoginRequiredMixin -- Ensures user has to login before trying to create a resource.
+        View -- CBV to handle view.
+    """
 
     def get(self, request, *args, **kwargs):
+        """Creates and shows an empty ResourceCreateForm to allow creation of resource.
+        """
         current_org = get_current_org()
         resource_form = ResourceCreateForm(in_org=current_org)
         context = {'form': resource_form, 'org': current_org}
         return render(request, 'Resource/resource-form.html', context=context)
 
     def post(self, request, *args, **kwargs):
+        """Handles validation and saving of a resource. Before saving, it changes
+        the 'org' param to point to the user's org so that the resource belongs to that
+        org. Also sets the resource to assigned state. It also triggers a mail to
+        current_user and device_admin that a resource was created and assigned to them.
+        """
         current_org = get_current_org()
         resource_form = ResourceCreateForm(request.POST, in_org=current_org)
         if resource_form.is_valid():

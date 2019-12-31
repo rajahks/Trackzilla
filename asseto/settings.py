@@ -169,7 +169,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {filename} {funcName} {lineno} [ {message} ]',
+            'format': '{levelname} {asctime} {filename} {funcName} {lineno} {process:d} {thread:d} [ {message} ]',
             'style': '{',
         },
         'simple': {

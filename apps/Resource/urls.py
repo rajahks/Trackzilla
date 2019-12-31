@@ -6,6 +6,7 @@ from .views import (
     ResourceCreateView,
     ResourceUpdateView,
     ResourceDeleteView,
+    ResourceHistoryView,
 )
 
 app_name = 'Resource'
@@ -15,6 +16,7 @@ urlpatterns = [
     path('new/', ResourceCreateView.as_view(), name='resource-create'),
     path('<int:pk>/update/', ResourceUpdateView.as_view(), name='resource-update'),
     path('<int:pk>/delete/', ResourceDeleteView.as_view(), name='resource-delete'),
+    path('<int:pk>/history/', ResourceHistoryView.as_view(), name='resource-history'),
     path('<int:pk>/acknowledge', ackResource, name='acknowledge_resource'),
     path('<int:pk>/deny', denyResource, name='deny_resource'),
     path('list/', views.resources_list, name='resources-list'),

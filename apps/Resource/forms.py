@@ -8,26 +8,51 @@ User = get_user_model()
 
 
 class ResourceDetailForm(forms.ModelForm):
-    name = forms.CharField(disabled=True)
-    serial_num = forms.CharField(disabled=True)
-    current_user = forms.ModelChoiceField(queryset=User.objects.all(), disabled=True) #TODO: All the three queries should be org specific.
-    device_admin = forms.ModelChoiceField(queryset=User.objects.all(), disabled=True)
-    # status = forms.ChoiceField(disabled=True)  # TODO: Commented out because this was causing the detail view to have an empty status field.
-    org = forms.ModelChoiceField(queryset=Org.objects.all(), disabled=True)
-    # TODO : Figure out to make description text area also non editable
+    """ModelForm which handles the detail page of a resource. It is like a regular
+    form but makes all the fields disabled so that the user cannot change any values.
+    Also we need to restrict values like 'current_user' and 'device_admin' to
+    contain only users from the current org
+    """
+
+    def __init__(self, *args, org, **kwargs):
+        """Constructor which accepts Org and carries out the following tasks:
+        1) Disable all the fields so that user cannot edit and field.
+        2) Restrict the queryset of user fields to contain elements only in the org.
+
+        Arguments:
+            org {apps.Organization.models.Org} -- Org object to which this resource belongs.
+        """
+
+        super(ResourceDetailForm, self).__init__(*args, **kwargs)
+        self.fields['current_user'].queryset = org.user_set.all()
+        self.fields['device_admin'].queryset = org.user_set.all()
+        for field in self.fields.values():
+            field.disabled = True
 
     class Meta:
         model = Resource
-        fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
+        exclude = ['history', 'previous_user', 'org']
 
 
 class ResourceCreateForm(forms.ModelForm):
-
+    """ModelForm to create a Resource. It removes few fields which the user wouldn't need
+    and also restricts the entries that will be shown to select the 'current_user' and
+    'device_admin'. They will be restricted to only have users pertaining to the current
+    org of the logged in user.
+    """
     def __init__(self, *args, in_org, **kwargs):
+        """Accepts the keyword arg 'in_org' to restrict entries only to that org.
+
+        Arguments:
+            in_org {apps.Organization.models.Org} -- Org in which we want the resource
+            to be created.
+        """
         super(ResourceCreateForm, self).__init__(*args, **kwargs)
         self.fields['current_user'].queryset = in_org.user_set.all()
         self.fields['device_admin'].queryset = in_org.user_set.all()
 
     class Meta:
         model = Resource
-        exclude = ['org', 'history', 'previous_user', 'status']  # org has to be set by the view to the user's current Org
+        exclude = ['org', 'history', 'previous_user', 'status']
+        # Org has to be set by the view to the user's current Org.
+        # status will also be set to RES_ASSIGNED in the view.

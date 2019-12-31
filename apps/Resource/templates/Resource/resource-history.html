@@ -1,0 +1,51 @@
+{% extends "Generic/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <h3>History of <strong>{{ resource.get_name }}</strong> part of <strong>{{ org.get_name }}</strong> org:</h3>
+    <i>Records found: {{ history_list|length }} </i>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">When</th>
+              <th scope="col">Who</th>
+              <th scope="col">What</th>
+              <th scope="col">Previous</th>
+              <th scope="col">Current</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in history_list %}
+                {% with numChanges=entry.what|length %}
+                <tr>
+                <td rowspan="{{numChanges}}">{{ forloop.counter }} </td>
+                <td rowspan="{{numChanges}}">{{ entry.when }}</td>
+                <td rowspan="{{numChanges}}">{{ entry.who }}</td>
+                {% for changeEntry in entry.what %}
+
+                    {% if forloop.counter == 1 %}
+                        <td> {{ changeEntry.field }} </td>
+                        <td> {{ changeEntry.prev }} </td>
+                        <td> {{ changeEntry.cur }} </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                        <td> {{ changeEntry.field }} </td>
+                        <td> {{ changeEntry.prev }} </td>
+                        <td> {{ changeEntry.cur }} </td>
+                        </tr>
+                    {% endif %}
+                {% empty %}
+                </tr>
+                {% endfor %}
+
+                {% endwith %}
+            {% empty %}
+                <tr><td colspan="6" align="center"><i>No records found !!</i></td></tr>
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+{% endblock content %}

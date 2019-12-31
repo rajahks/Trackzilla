@@ -45,9 +45,9 @@ class CurrentOrgMiddleware(MiddlewareMixin):
         :type request: :class:`~django.http.request.HttpRequest`
         :param request: Django http request.
         """
-        if hasattr(_thread_locals, 'CURRENT_ORG') is False:
-            # Only set this variable if not already set. This also prevents
-            # resetting the variable on every request.
+        if hasattr(request.user, 'org'):
+            # Root users would not be of type AssetUser and will not have the 'org' member
+            # Let's check if the 'org' member is available before trying to access it.
             _thread_locals.CURRENT_ORG = request.user.org
 
         # TODO: Currently user can join one org. Once user.org becomes a

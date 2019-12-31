@@ -1,0 +1,21 @@
+{% extends "Generic/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="content-section">
+        <form>
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">
+                    <div class="d-flex align-items-center">
+                    Resource in {{ org.get_name }} organization
+                    <a href="{% url 'Resource:resource-update' pk=resource.pk %}" class="ml-auto btn btn-sm btn-success">
+                        Edit </a>
+                    <a href="{% url 'Resource:resource-history' pk=resource.pk %}" class="ml-3 btn btn-sm btn-success">
+                        History</a>
+                    </div>
+                </legend>
+                {{ form|crispy }}
+            </fieldset>
+        </form>
+    </div>
+{% endblock content %}

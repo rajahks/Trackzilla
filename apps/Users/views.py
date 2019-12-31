@@ -38,7 +38,7 @@ def home(request):
 
     # The current org is saved in thread local variable called CURRENT_ORG.
     cur_org = get_current_org()
-    logger.debug("Displaying home page for Org:%s User%s" %
+    logger.debug("Displaying home page for Org:%s User:%s" %
                  (cur_org, request.user))
 
     # First filter all the resources based on the current chosen Org
