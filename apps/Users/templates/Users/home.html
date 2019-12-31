@@ -57,6 +57,35 @@
 
 <br>
 
+{% if resInDisputeList|length %}
+<!-- We need to show the 'Resource is dispute that need action' card -->
+<div class="card">
+    <div class="card-header"><strong>Resources in dispute</strong></div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <tbody>
+            {% for disputeEntryDict in resInDisputeList %}
+              <tr>
+                  <td>
+                    <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                    <a href="{{disputeEntryDict.detail_url}}" >
+                        {{ disputeEntryDict.name }}
+                    </a>
+                  </td>
+                  <td align="right">
+                    <a href="{{disputeEntryDict.ack_url}}" class="btn btn-outline-primary btn-sm">Ack</a>
+                    <!-- <a href="{{needActionEntry_dict.deny_url}}" class="btn btn-outline-primary btn-sm">Deny</a> -->
+                  </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+          </table>
+    </div>
+</div>
+{% endif %}
+
+<br>
+
 <!-- We need to show the Resources which are in the users name and have been ackd -->
 <div class="card">
     <div class="card-header"><strong>Resources you are using</strong></div>

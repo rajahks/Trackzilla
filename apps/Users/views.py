@@ -57,14 +57,25 @@ def home(request):
         needActEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
         needActionList.append(needActEntryDict)
 
-    #TODO: Show resources in conflict(disputed state) in a separate block
+    # Right pane - block 2 - Resources in disputed state.
+    # We need to fetch the list of devices which the user has deny
+    # Send this as a list as part of dict
+    resInDisputeList = []
+    resDisputeQset = resources_in_org.filter(current_user__id=request.user.id).filter(
+                                             status=Resource.RES_DISPUTE)
+    for res in resDisputeQset:
+        disputeEntryDict = {}
+        disputeEntryDict['name'] = res.get_name()
+        disputeEntryDict['ack_url'] = request.build_absolute_uri(res.get_acknowledge_url())
+        disputeEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
+        resInDisputeList.append(disputeEntryDict)
 
-    # Right Pane - block 2 - Resources in your name and acknowledged
+    # Right Pane - block 3 - Resources in your name and acknowledged
     inUseList = []
     resInUseQset = resources_in_org.filter(current_user__id=request.user.id).filter(status=Resource.RES_ACKNOWLEDGED)
     for res in resInUseQset:
         inUseEntryDict = {}
-        inUseEntryDict['name'] = res.name
+        inUseEntryDict['name'] = res.get_name()
         inUseEntryDict['update_url'] = request.build_absolute_uri(res.get_update_url())
         inUseEntryDict['detail_url'] = request.build_absolute_uri(res.get_absolute_url())
         inUseList.append(inUseEntryDict)
@@ -96,6 +107,7 @@ def home(request):
     resBeingManagedList = resources_in_org.filter(device_admin__id=request.user.id)
 
     context = {"needActionList": needActionList,
+               "resInDisputeList": resInDisputeList,
                "inUseList": inUseList,
                "teamResourceDict": teamResourceDict,
                "managedDeviceList": resBeingManagedList, }
