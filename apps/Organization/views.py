@@ -8,10 +8,13 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from .models import Org, Team
-from .forms import OrgDetailForm, TeamDetailForm
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.forms.widgets import CheckboxSelectMultiple
+from apps.Users.middleware import get_current_org
+from django.urls import reverse
+from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
 
 # configure Logger
 import logging
@@ -32,9 +35,10 @@ def teams_list(request):
 
 class OrgDetailView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        orgObject = get_object_or_404(Org,id=pk)
-        context = { 'Org': orgObject}
+        orgObject = get_object_or_404(Org, id=pk)
+        context = {'Org': orgObject}
         return render(request, 'Organization/org_context.html', context=context)
+
 
 class OrgCreateView(LoginRequiredMixin, CreateView):
     model = Org
@@ -49,7 +53,7 @@ class OrgCreateView(LoginRequiredMixin, CreateView):
             form_class = self.get_form_class()
 
         form = super(OrgCreateView, self).get_form(form_class)
-        form.fields['allowed_email_domain'].widget.attrs ={'placeholder': 'Ex: @test.com'}
+        form.fields['allowed_email_domain'].widget.attrs = {'placeholder': 'Ex: @test.com'}
         return form
 # TODO: Creating new Org with name having spaces fails as getting the join link of that fails.
 # Getting join list fails as it expects name to be a slug but this may not be the case.
@@ -57,6 +61,7 @@ class OrgCreateView(LoginRequiredMixin, CreateView):
 # TODO: When a user creates an Org, he should be set as the admin of the org and the FK value
 # in the User object should be updated on save. This leads to another problem where a User
 # could create multiple orgs. This would mean it should be ManyToManyField 
+
 
 class OrgUpdateView(LoginRequiredMixin, UpdateView):
     model = Org
@@ -145,32 +150,90 @@ def OrgJoinView(request, pk, OrgName, *args, **kwargs):
             return HttpResponse("User %s already part of a different Org %s. Exit that org to join a new one." %
                 (loggedInUser.name, loggedInUser.org.org_name))
 
+
 # CRUD views for team
-class TeamDetailView(LoginRequiredMixin, View):
+class TeamDetailView(LoginRequiredMixin, UserHasAccessToTeamMixin, View):
     def get(self, request, pk):
-        teamObj = get_object_or_404(Team,id=pk)
-        context = { 'teamObj': teamObj}
+        teamObj = get_object_or_404(Team, id=pk)
+        context = {'teamObj': teamObj}
         return render(request, 'Organization/team_detail.html', context=context)
+
+    # Other generic views have an included get_object function which returns the current
+    # object. As 'View' base class does not have this, we need to implement it as it is
+    # required by UserHasAccessToTeamMixin to fetch the current object.
+    def get_object(self):
+        if 'pk' not in self.kwargs.keys():
+            logger.error("pk not present. Cannot fetch Team. Denying access by returning None")
+            return None
+
+        # Fetch the object.
+        obj = get_object_or_404(Team, pk=self.kwargs['pk'])
+        return obj
+
 
 class TeamCreateView(LoginRequiredMixin, CreateView):
     model = Team
-    template_name = 'Organization/team-form.html'
-    fields = ['team_name', 'team_admins', 'org', 'sub_teams', 'team_members']
+    template_name = 'Organization/team-new.html'
+    fields = ['team_name', 'team_admins', 'parent_team', 'team_members']
+
+    def get_form(self):
+        form = super(TeamCreateView, self).get_form()
+        cur_user_org = get_current_org()
+        # form.fields['team_members'].widget = CheckboxSelectMultiple()
+        form.fields['team_members'].queryset = cur_user_org.user_set.all()
+        # form.fields['team_admins'].widget = CheckboxSelectMultiple()
+        form.fields['team_admins'].queryset = cur_user_org.user_set.all()
+        # exclude the current team from this list
+        form.fields['parent_team'].queryset = cur_user_org.team_set.all()
+        return form
 
     def form_valid(self, form):
+        # Set the org to current user's org
+        form.instance.org = get_current_org()
         return super().form_valid(form)
 
+    def get_success_url(self):
+        return reverse('Org:team-detail', kwargs={'pk': self.object.pk } )
 
-class TeamUpdateView(LoginRequiredMixin, UpdateView):
+    def get_context_data(self, **kwargs):
+        ctx = super(TeamCreateView, self).get_context_data(**kwargs)
+        ctx['org'] = get_current_org()  # form would already be added
+        return ctx
+
+
+class TeamUpdateView(LoginRequiredMixin, UserCanModifyTeamMixin, UpdateView):
     model = Team
-    template_name = 'Organization/team-form.html'
-    fields = ['team_name', 'team_admins', 'org', 'sub_teams', 'team_members']
+    template_name = 'Organization/team-update.html'
+    fields = ['team_name', 'team_admins', 'parent_team', 'team_members']
+    context_object_name = 'team'  # team obj passed to the template
+
+    def get_form(self):
+        form = super(TeamUpdateView, self).get_form()
+        cur_user_org = get_current_org()
+        team_obj = self.get_object()
+        # form.fields['team_members'].widget = CheckboxSelectMultiple()
+        form.fields['team_members'].queryset = cur_user_org.user_set.all()
+        # form.fields['team_admins'].widget = CheckboxSelectMultiple()
+        form.fields['team_admins'].queryset = cur_user_org.user_set.all()
+        # exclude the current team from this list
+        # TODO: Extend this to exclude all child teams(including grand child teams) as well.
+        form.fields['parent_team'].queryset = cur_user_org.team_set.exclude(id=team_obj.id)
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
 
+    def get_context_data(self, **kwargs):
+        ctx = super(TeamUpdateView, self).get_context_data(**kwargs)
+        ctx['org'] = get_current_org()  # form would already be added
+        return ctx
 
-class TeamDeleteView(LoginRequiredMixin, DeleteView):
+    def get_success_url(self):
+        return reverse('Org:team-detail', kwargs={'pk': self.object.pk})
+
+
+class TeamDeleteView(LoginRequiredMixin, UserCanModifyTeamMixin, DeleteView):
     model = Team
     template_name = 'Organization/team-confirm-delete.html'
     success_url = '/'
+    context_object_name = 'team'

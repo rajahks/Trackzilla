@@ -91,7 +91,24 @@ class Team(models.Model):
     org = models.ForeignKey(Org, on_delete=models.PROTECT, related_name='team_set')
 
     # Teams are recursive. One team can contain multiple teams within itself.
-    sub_teams = models.ManyToManyField('self', related_name='sub_team_list', blank=True)
+    # NOTE: Commented sub_teams and adding parent_team
+    # sub_teams = models.ManyToManyField('self', related_name='sub_team_list', blank=True)
+
+    # Having recursive teams can lead to cyclic issues(i.e parent team
+    # addded as a sub team. To avoid this we need to filter out all parent and ancestors
+    # when showing the list to add subteams).
+
+    # Also it would be better to have a single ForeignKey to the parent team.
+    # This way when creating the sub-team we can choose who the parent is vs going and
+    # adding a subteam in the parent team. Its much easier and another team admin will not
+    # need to get involved. However this still can lead to cyclic issues as follows:
+    # Lets say we have 3 teams Team Base, Team Parent and Team Child. We can edit such
+    # that Team Parent's parent is Team Child and Team Child's parent is Team Parent.
+    # And so the cyclic issue.
+    # To solve this, in the view we need to filter out all children when showing the
+    # list of parents.
+    parent_team = models.ForeignKey('self', on_delete=models.PROTECT,
+        related_name='sub_team_list', blank=True, null=True)
 
     # Members of the team.
     team_members = models.ManyToManyField(User, related_name='team_member_of', blank=True)
@@ -101,3 +118,31 @@ class Team(models.Model):
 
     def get_absolute_url(self):
         return reverse("Org:team-detail", kwargs={"pk": self.pk})
+
+    def get_name(self):
+        return self.team_name
+
+    def get_team_hierarchy(self):
+        """Returns a string representation of the hierarchy to the Org.
+        This would allow us to easily visualize the parents and also the Org.
+
+        Eg: If a team 'Team1' is part of org Trackzilla then the path is
+        'Trackzilla / Team1'. If Team1 has a sub-team 'Team2' then path of Team2 is
+        'Trackzilla / Team1 / Team2'
+
+        Enhancement: This currently returns a string representation. It would be good
+        to have each of the parent and the org as clickable links so that we can easily
+        navigate.
+
+        Returns:
+            str -- String representation of the path to the org.
+        """
+        team = self
+        path = team.get_name()
+        while team.parent_team is not None:
+            path = team.parent_team.get_name() + " / " + path
+            team = team.parent_team
+
+        # append the Org
+        path = "%s / %s" % (self.org.get_name(), path)
+        return path
