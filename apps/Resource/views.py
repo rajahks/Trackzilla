@@ -262,17 +262,22 @@ class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Resource
     template_name = 'Resource/resource-confirm-delete.html'
     success_url = '/'
+    context_object_name = 'resource'
 
-    # TODO: Hackfest addition. Appropriate name if this is being used ?
+    # Implement the function called by UserPassesTestMixin
+    # Only the device admin should have delete rights.
     def test_func(self):
         resource = self.get_object()
-        # Only the device admin should have delete rights.
         if self.request.user.id == resource.device_admin.id:
             return True
+
+        logger.warning("User %s DENIED access to DeleteView of %s as not an Admin of the device." %
+            (self.request.user.get_email(), resource.get_name()))
         return False
 
-def sendAssignmentMail( from_email, to_email, cur_user, prev_user,
-                        device_name, ack_link, decline_link ):
+
+def sendAssignmentMail(from_email, to_email, cur_user, prev_user,
+                       device_name, ack_link, decline_link):
     """API to send an email when the device is reassigned.
 
     Arguments:

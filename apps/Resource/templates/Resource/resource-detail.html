@@ -12,6 +12,12 @@
                         Edit </a>
                     <a href="{% url 'Resource:resource-history' pk=resource.pk %}" class="ml-3 btn btn-sm btn-success">
                         History</a>
+
+                    {% if user == resource.device_admin %}
+                        <a href="{% url 'Resource:resource-delete' pk=resource.pk %}" class="ml-3 btn btn-sm btn-danger">
+                            Delete</a>
+                    {% endif %}
+
                     </div>
                 </legend>
                 {{ form|crispy }}
