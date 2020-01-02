@@ -15,6 +15,7 @@ from django.forms.widgets import CheckboxSelectMultiple
 from apps.Users.middleware import get_current_org
 from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
+from apps.Users.mixin import UserHasAccessToOrgMixin
 from django.utils.text import slugify
 
 # configure Logger
@@ -34,7 +35,7 @@ def teams_list(request):
 # permission to access a view. In our case, only a user belonging to the Org should be able
 # to view details.
 
-class OrgDetailView(LoginRequiredMixin, View):
+class OrgDetailView(LoginRequiredMixin, UserHasAccessToOrgMixin, View):
     def get(self, request, pk):
         orgObject = get_object_or_404(Org, id=pk)
         context = {'Org': orgObject}

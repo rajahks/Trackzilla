@@ -92,3 +92,37 @@ class UserCanModifyTeamMixin(UserHasAccessToTeamMixin):
         else:
             logger.error("Object not of type Team. Type:%s" % (type(obj),))
             return False
+
+
+class UserHasAccessToOrgMixin(UserPassesTestMixin):
+
+    # Override the function from UserPassesTestMixin to determine if user has
+    # access to the Org.
+    def test_func(self):
+        # In order to check if the user has access to a Org, we need to first fetch
+        # the Org. In order to fetch the Org we will use the 'pk' field which is
+        # part of all Org urls.
+        # Note: It is very important that we need to have the 'pk' as without it we will
+        # not be able to fetch the object.
+
+        if 'pk' not in self.kwargs.keys():
+            logger.error("pk not present. Cannot fetch Org. Denying access by returning False")
+            return False
+
+        # Fetch the object.
+        obj = get_object_or_404(Org, pk=self.kwargs['pk'])
+        if isinstance(obj, Org):
+            if obj == self.request.user.org:
+                # Logged in user's belongs to the same Org. Allow access
+                # In future if a user can be part of multiple Orgs then change this
+                # condition to "obj.org in self.request.user.orgs.all()"
+                logger.debug("User %s given access to '%s' Org as both are part of same Org" %
+                    (self.request.user.get_email(), obj.get_name()))
+                return True
+            else:
+                logger.warning("User %s (%s) DENIED access to %s Org as both are not part of same Org" %
+                    (self.request.user.get_email(), self.request.user.org, obj.get_name()))
+                return False
+        else:
+            logger.error("Object not of type Org. Type:%s" % (type(obj),))
+            return False
