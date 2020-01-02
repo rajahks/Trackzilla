@@ -15,6 +15,7 @@ from django.forms.widgets import CheckboxSelectMultiple
 from apps.Users.middleware import get_current_org
 from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
+from django.utils.text import slugify
 
 # configure Logger
 import logging
@@ -53,7 +54,7 @@ class OrgCreateView(LoginRequiredMixin, CreateView):
             form_class = self.get_form_class()
 
         form = super(OrgCreateView, self).get_form(form_class)
-        form.fields['allowed_email_domain'].widget.attrs = {'placeholder': 'Ex: @test.com'}
+        form.fields['allowed_email_domain'].widget.attrs = {'placeholder': 'Ex: @trackzilla.com'}
         return form
 # TODO: Creating new Org with name having spaces fails as getting the join link of that fails.
 # Getting join list fails as it expects name to be a slug but this may not be the case.
@@ -79,10 +80,12 @@ class OrgUpdateView(LoginRequiredMixin, UpdateView):
         form.fields['allowed_email_domain'].widget.attrs ={'placeholder': 'Ex: @test.com'}
         return form
 
+
 class OrgDeleteView(LoginRequiredMixin, DeleteView):
     model = Org
     template_name = 'Organization/org-confirm-delete.html'
     success_url = '/'
+
 
 @login_required
 def OrgJoinView(request, pk, OrgName, *args, **kwargs):
@@ -115,10 +118,13 @@ def OrgJoinView(request, pk, OrgName, *args, **kwargs):
     """
     if request.method == 'GET':
         # Fetch the organization based on pk.
-        orgObj = get_object_or_404(Org,pk=pk)
+        orgObj = get_object_or_404(Org, pk=pk)
         # Validate join URL by checking if orgName given for orgID is correct.
         # This logic may need to be revised in future.
-        if orgObj.org_name != OrgName: #case sensitive compare
+
+        # Since org name can have spaces, we currently return a slugyfied version of the
+        # org name in join link. Convert org name and Compare with what was passed.
+        if slugify(orgObj.org_name) != OrgName:
             raise Http404("Invalid Join URL. No such organization exists")
 
         # Fetch the logged in User

@@ -1,12 +1,14 @@
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-
-#Get the current custom User Model.
-User = get_user_model()
+from django.utils.text import slugify
 
 import logging
 logger = logging.getLogger(__name__)
+
+# Get the current custom User Model.
+User = get_user_model()
+
 
 class Org(models.Model):
     # Name of the organization. A user can create multiple orgs.
@@ -38,11 +40,12 @@ class Org(models.Model):
     def get_join_link(self):
         """Returns the link which can be used to join the organization.
         """
-        return reverse('Org:org-join', kwargs={'pk':self.pk, 'OrgName':self.org_name})
+        return reverse('Org:org-join', kwargs={'pk': self.pk,
+            'OrgName': slugify(self.org_name)})
 
     def is_email_allowed(self, email_id):
         """Used to check if the emailId passed can join the org. This is decided based on
-        whether 'Allowed email domain' is configured. In future when the allow list 
+        whether 'Allowed email domain' is configured. In future when the allow list
         criteria changes the logic in this function will need to be amended.
 
         Arguments:
