@@ -11,7 +11,7 @@ from .models import Org, Team
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.http import Http404, HttpResponse, HttpResponseForbidden
-from django.forms.widgets import CheckboxSelectMultiple
+from django.contrib.auth.mixins import UserPassesTestMixin
 from apps.Users.middleware import get_current_org
 from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
@@ -65,7 +65,7 @@ class OrgCreateView(LoginRequiredMixin, CreateView):
 # could create multiple orgs. This would mean it should be ManyToManyField 
 
 
-class OrgUpdateView(LoginRequiredMixin, UpdateView):
+class OrgUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Org
     template_name = 'Organization/org-form.html'
     fields = ['org_name', 'admin', 'allowed_email_domain']
@@ -78,14 +78,45 @@ class OrgUpdateView(LoginRequiredMixin, UpdateView):
             form_class = self.get_form_class()
 
         form = super(OrgUpdateView, self).get_form(form_class)
-        form.fields['allowed_email_domain'].widget.attrs ={'placeholder': 'Ex: @test.com'}
+        form.fields['allowed_email_domain'].widget.attrs = {'placeholder': 'Ex: @trackzilla.com'}
+        org_obj = self.get_object()
+        # List should contain only users of that Org.
+        form.fields['admin'].queryset = org_obj.user_set.all()
         return form
 
+    # Only the admin of the Org should be able to access this page.
+    # Implementing the function called by UserPassesTestMixin.
+    def test_func(self):
+        orgObj = self.get_object()
+        curUser = self.request.user
+        if orgObj.admin == curUser:
+            logger.debug("User %s admin of Org %s. Allowed to access Org Update page" %
+                (curUser.get_email(), orgObj.get_name()))
+            return True
+        else:
+            logger.debug("User %s Not admin of Org %s. Denied access to Org Update page" %
+                (curUser.get_email(), orgObj.get_name()))
+            return False
 
-class OrgDeleteView(LoginRequiredMixin, DeleteView):
+
+class OrgDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Org
     template_name = 'Organization/org-confirm-delete.html'
     success_url = '/'
+
+    # Only the admin of the Org should be able to delete the Org.
+    # Implementing the function called by UserPassesTestMixin.
+    def test_func(self):
+        orgObj = self.get_object()
+        curUser = self.request.user
+        if orgObj.admin == curUser:
+            logger.debug("User %s admin of Org %s. Allowed to access Org Delete page" %
+                (curUser.get_email(), orgObj.get_name()))
+            return True
+        else:
+            logger.debug("User %s Not admin of Org %s. Denied access to Org Delete page" %
+                (curUser.get_email(), orgObj.get_name()))
+            return False
 
 
 @login_required
