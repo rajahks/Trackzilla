@@ -17,6 +17,7 @@ from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
 from apps.Users.mixin import UserHasAccessToOrgMixin
 from django.utils.text import slugify
+from django.http import HttpResponseForbidden
 
 # configure Logger
 import logging
@@ -180,11 +181,11 @@ def OrgJoinView(request, pk, OrgName, *args, **kwargs):
             logger.info("User %s added to Org %s" %(loggedInUser.email, OrgName))
             # TODO: Send an email or notify the admin that a new user has been added.
             return HttpResponse("User %s added to org %s" %
-                (loggedInUser.name, loggedInUser.org.org_name)) #TODO: Change to template.
+                (loggedInUser.name, loggedInUser.org.org_name))  # TODO: Change to template.
         elif loggedInUser.org is not None and loggedInUser.org == orgObj:
             return HttpResponse("User %s already part of org %s" %
-                (loggedInUser.name, loggedInUser.org.org_name)) #TODO: Change to template.
-        else: # User part of a different Org. As of now only one Org allowed.
+                (loggedInUser.name, loggedInUser.org.org_name))  # TODO: Change to template.
+        else:  # User part of a different Org. As of now only one Org allowed.
             return HttpResponse("User %s already part of a different Org %s. Exit that org to join a new one." %
                 (loggedInUser.name, loggedInUser.org.org_name))
 
@@ -275,3 +276,36 @@ class TeamDeleteView(LoginRequiredMixin, UserCanModifyTeamMixin, DeleteView):
     template_name = 'Organization/team-confirm-delete.html'
     success_url = '/'
     context_object_name = 'team'
+
+
+class TeamExitView(LoginRequiredMixin, UserHasAccessToTeamMixin, View):
+    def get(self, request, pk):
+        teamObj = get_object_or_404(Team, id=pk)
+        cur_user = request.user
+        # Only a user who belongs to the team can exit it. Check if the logged in user
+        # visiting the Url belongs to the team
+        # Note that we could have a team_admin who is not part of the team.
+        # For a team_admin to exit, the admin has to choose another admin and remove
+        # himself from the admin list.
+        if cur_user not in teamObj.team_members.all():
+            return HttpResponseForbidden('You cannot exit a team you do not belong to')
+            # TODO: Show a template describing the error. Currently it shows up as a string.
+
+        # remove the user from the team.
+        # TODO: Have a confirm-exit template process than a direct exit.
+        teamObj.team_members.remove(cur_user)
+
+        context = {'teamObj': teamObj}
+        return render(request, 'Organization/team-exit-success.html', context=context)
+
+    # Other generic views have an included get_object function which returns the current
+    # object. As 'View' base class does not have this, we need to implement it as it is
+    # required by UserHasAccessToTeamMixin to fetch the current object.
+    def get_object(self):
+        if 'pk' not in self.kwargs.keys():
+            logger.error("pk not present. Cannot fetch Team. Denying access by returning None")
+            return None
+
+        # Fetch the object.
+        obj = get_object_or_404(Team, pk=self.kwargs['pk'])
+        return obj

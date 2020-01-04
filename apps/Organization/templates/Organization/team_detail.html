@@ -96,16 +96,25 @@
               </table>
             </div>
             <hr>
+            <strong>Change Team Settings</strong> <br>
             {% if request.user in teamObj.team_admins.all %}
-              <strong>Change Team Settings</strong> <br>
               <a href="{%url 'Org:team-update' pk=teamObj.pk %}" class="btn btn-outline-success m-3">Edit Settings</a>
-              <hr>
-              <strong>Danger Zone</strong> <br>
-              <a href="{%url 'Org:team-delete' pk=teamObj.pk %}" class="btn btn-outline-danger m-3">Delete Team</a>
             {% else %}
               <i>To make changes to the team, contact the admin.</i>
             {% endif %}
+            <hr>
 
+            {% if request.user in teamObj.team_members.all or request.user in teamObj.team_admins.all %}
+              <strong>Danger Zone</strong> <br>
+
+              {% if request.user in teamObj.team_members.all %}
+                <a href="{%url 'Org:team-exit' pk=teamObj.pk %}" class="btn btn-outline-danger m-3">Exit Team</a>
+              {% endif %}
+
+              {% if request.user in teamObj.team_admins.all %}
+                <a href="{%url 'Org:team-delete' pk=teamObj.pk %}" class="btn btn-outline-danger m-3">Delete Team</a>
+              {% endif %}
+            {% endif %}
           </div>
         </div>
       </div>
