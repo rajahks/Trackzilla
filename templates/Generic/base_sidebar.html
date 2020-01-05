@@ -89,6 +89,25 @@
           </ul>
         </div>
       </div>
+
+      {% if user.team_admin_for.all %}
+        {% comment %}
+        Shows the Teams managing section only if the user is managing any teams.
+        {% endcomment %}
+        <hr>
+        <div id="TeamsManagingContainer" class="mt-4">
+          <div class="d-flex flex-row">
+            <div class="mr-auto"><h4>Teams you manage</h4> </div>
+          </div>
+          <div class="ml-3 p-1 d-flex flex-column">
+            <ul class="list-unstyled">
+              {% block TeamsManagingList %}
+              {% endblock %}
+            </ul>
+          </div>
+        </div>
+      {% endif %}
+
     </div>  <!-- div col-md-2 sidebar-->
 
     <div class="col-md-6 mx-auto">
