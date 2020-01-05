@@ -15,7 +15,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from apps.Users.middleware import get_current_org
 from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
-from apps.Users.mixin import UserHasAccessToOrgMixin
+from apps.Users.mixin import UserHasAccessToOrgMixin, UserCanDeleteOrgMixin
 from django.utils.text import slugify
 from django.http import HttpResponseForbidden
 
@@ -100,25 +100,74 @@ class OrgUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return False
 
 
-class OrgDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Org
-    template_name = 'Organization/org-confirm-delete.html'
-    success_url = '/'
-    context_object_name = "del_org"
+class OrgDeleteView(LoginRequiredMixin, UserCanDeleteOrgMixin, View):
+    def get(self, request, pk):
+        orgObject = get_object_or_404(Org, id=pk)
+        cur_user = request.user
 
-    # Only the admin of the Org should be able to delete the Org.
-    # Implementing the function called by UserPassesTestMixin.
-    def test_func(self):
-        orgObj = self.get_object()
-        curUser = self.request.user
-        if orgObj.admin == curUser:
-            logger.debug("User %s admin of Org %s. Allowed to access Org Delete page" %
-                (curUser.get_email(), orgObj.get_name()))
-            return True
+        # Check if the user is the admin of the Org to delete it.
+        # Ideally this check can never be true because UserCanDeleteOrgMixin ensures
+        # the user is the admin of the Org.
+        if cur_user != orgObject.admin:
+            logger.error("UserCanDeleteOrgMixin has not done its job. user:%s org:%s org_admin:%s",
+                cur_user.get_email(), orgObject.get_name(), orgObject.admin.get_email())
+            return HttpResponseForbidden('You cannot delete an Org you do not manage')
+
+        # An Org admin cannot delete an Org if:
+        # 1) Org has any teams. All the teams should be deleted.
+        # 2) Org has any Resources. All the resources should be deleted.
+        # 3) Org has any Users. All the users need to exit the Org.
+        # Only if the Org doesnot satisfy any of the above cases, should it be allowed
+        # to be deleted.
+        # NOTE: However there is one corner case where there is only one user in
+        # the org and that is the org admin. Since he cannot re-assin the admin role
+        # to someone else, he would not be allowed to exit the Org. In such case, the 
+        # only option is to allow deletion of the Org. we should manually remove the admin
+        # and allow deletion.
+
+        team_list = orgObject.team_set.all()
+        res_list = orgObject.resource_set.all()
+        # We need to show all users other than the org admin. As the admin once removed
+        # cannot delete the org.
+        user_list = orgObject.user_set.exclude(id=cur_user.id)
+
+        # Check if there are teams and resources still part of the Org.
+        # In case of users, we should not have any other user other than the Org admin.
+        if len(team_list) > 0 or len(res_list) > 0 or len(user_list) > 0:
+            # Show the user, the list of actions he has to take.
+            context = {'res_list': res_list, 'team_list': team_list,
+                       'user_list': user_list,
+                       'del_org': orgObject}
+            return render(request, 'Organization/org_del_criteria.html', context=context)
         else:
-            logger.debug("User %s Not admin of Org %s. Denied access to Org Delete page" %
-                (curUser.get_email(), orgObj.get_name()))
-            return False
+            # Exit criteria met. show a confirm exit page.
+            context = {'del_org': orgObject}
+            return render(request, 'Organization/org-confirm-delete.html', context=context)
+
+    def post(self, request, pk):
+        orgObject = get_object_or_404(Org, id=pk)
+        cur_user = request.user
+
+        # Check if the user meets the exit criteria. This should ideally be shown
+        # when the user does a GET. But in case we have users who do a direct POST
+        # using some tools then we should not allow it.
+        # The below condition catches those cases and prevents accidental exit.
+        team_list = orgObject.team_set.all()
+        res_list = orgObject.resource_set.all()
+        user_list = orgObject.user_set.all()
+
+        # Check if there are teams and resources still part of the Org.
+        # In case of users, we should not have any other user other than the Org admin.
+        if len(team_list) > 0 or len(res_list) > 0 or len(user_list) > 1:
+            return HttpResponseRedirect(reverse('Org:org-delete',
+                                                kwargs={'pk': orgObject.pk}))
+
+        # Criteria met. Lets exit from the Org and then delete it.
+        orgObject.user_set.remove(cur_user)
+        orgObject.admin = None
+        orgObject.delete()
+        # redirect to Home Page.
+        return HttpResponseRedirect(reverse('home'))
 
 
 class OrgExitView(LoginRequiredMixin, UserHasAccessToOrgMixin, View):
