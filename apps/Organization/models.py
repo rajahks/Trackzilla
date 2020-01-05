@@ -16,7 +16,8 @@ class Org(models.Model):
 
     # Admin for the Org. Generally the person who creates the org.
     # Do not allow the user to be deleted if he is an admin of any Org
-    admin = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name="adminForOrg")
+    admin = models.ForeignKey(User, on_delete=models.PROTECT, null=True,
+                              related_name="admin_for_org")
 
     # As the join link could be leaked outside an org, we do not want people outside an
     # org to join the Org. So we allow the admin to specify the domain names to allow.

@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Org, Team
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.contrib.auth.mixins import UserPassesTestMixin
 from apps.Users.middleware import get_current_org
 from django.urls import reverse
@@ -104,6 +104,7 @@ class OrgDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Org
     template_name = 'Organization/org-confirm-delete.html'
     success_url = '/'
+    context_object_name = "del_org"
 
     # Only the admin of the Org should be able to delete the Org.
     # Implementing the function called by UserPassesTestMixin.
@@ -118,6 +119,72 @@ class OrgDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
             logger.debug("User %s Not admin of Org %s. Denied access to Org Delete page" %
                 (curUser.get_email(), orgObj.get_name()))
             return False
+
+
+class OrgExitView(LoginRequiredMixin, UserHasAccessToOrgMixin, View):
+    def get(self, request, pk):
+        orgObject = get_object_or_404(Org, id=pk)
+        cur_user = request.user
+
+        # Check if the user even belongs to the Org to exit it.
+        # Ideally this check can never be true because UserHasAccessToOrgMixin ensures
+        # the user is part of the Org.
+        if cur_user not in orgObject.user_set.all():
+            return HttpResponseForbidden('You cannot exit an Org you do not belong to')
+
+        # A user should not be allowed to exit the Org if:
+        # 1) User has any resources in his name. They should be reassigned.
+        # 2) User is the admin of any resources. Some one else should be made admin.
+        # 3) User is the admin of any team. Some one else should be made admin.
+        # 4) User is the member of any team. User should exit the teams.
+        # 5) User is the admin of the Org. Someone else should be made admin.
+        # Only if the user doesnot satisfy any of the above cases, should he be allowed
+        # to exit the Org.
+
+        res_list = cur_user.res_being_used.all()
+        res_admin_list = cur_user.res_being_managed.all()
+        team_list = cur_user.team_member_of.all()
+        team_admin_list = cur_user.team_admin_for.all()
+        org_admin_list = cur_user.admin_for_org.all()
+
+        # Check if even one of the above lists has any values.
+        if len(res_list) > 0 or len(res_admin_list) > 0 or len(team_list) > 0 or \
+           len(team_admin_list) > 0 or len(org_admin_list) > 0:
+            # Show the user, the list of actions he has to take.
+            context = {'res_list': res_list, 'res_admin_list': res_admin_list,
+                       'team_list': team_list, 'team_admin_list': team_admin_list,
+                       'org_admin_list': org_admin_list,
+                       'exit_org': orgObject}
+            return render(request, 'Organization/org_exit_criteria.html', context=context)
+        else:
+            # Exit criteria met. show a confirm exit page.
+            context = {'exit_org': orgObject}
+            return render(request, 'Organization/org-confirm-exit.html', context=context)
+
+    def post(self, request, pk):
+        orgObject = get_object_or_404(Org, id=pk)
+        cur_user = request.user
+
+        # Check if the user meets the exit criteria. This should ideally be shown
+        # when the user does a GET. But in case we have users who do a direct POST
+        # using some tools then we should not allow it.
+        # The below condition catches those cases and prevents accidental exit.
+        res_list = cur_user.res_being_used.all()
+        res_admin_list = cur_user.res_being_managed.all()
+        team_list = cur_user.team_member_of.all()
+        team_admin_list = cur_user.team_admin_for.all()
+        org_admin_list = cur_user.admin_for_org.all()
+
+        # Check if even one of the above lists has any values.
+        if len(res_list) > 0 or len(res_admin_list) > 0 or len(team_list) > 0 or \
+           len(team_admin_list) > 0 or len(org_admin_list) > 0:
+            return HttpResponseRedirect(reverse('Org:org-exit',
+                                                kwargs={'pk': orgObject.pk}))
+
+        # Criteria met. Lets exit from the Org.
+        orgObject.user_set.remove(cur_user)
+        # redirect to Home Page.
+        return HttpResponseRedirect(reverse('home'))
 
 
 @login_required
