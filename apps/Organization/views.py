@@ -45,11 +45,48 @@ class OrgDetailView(LoginRequiredMixin, UserHasAccessToOrgMixin, View):
 
 class OrgCreateView(LoginRequiredMixin, CreateView):
     model = Org
-    template_name = 'Organization/org-form.html'
-    fields = ['org_name', 'admin', 'allowed_email_domain']
+    template_name = 'Organization/org-create.html'
+    fields = ['org_name', 'allowed_email_domain']
+    context_object_name = "org"
+
+    def get(self, request, *args, **kwargs):
+        # During 'get' we ideally want to show an empty form to allow the user to
+        # create and Org. However since we do not allow the user to be part of more
+        # than one Org, we need to check and throw and error if the user is already
+        # part of another Org. We do not allow the user to create an Org if he is already
+        # part of another Org.
+        cur_user = request.user
+        if cur_user.org is not None:
+            context = {'cur_org': cur_user.org}
+            return render(request, 'Organization/org_error_second.html', context)
+
+        # Not part of any Org. Show the empty form. Taken care of by CreateView
+        return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        return super().form_valid(form)
+        # This is called if form is valid after Form submit.
+        # Since there would be no users in the Org yet, we will mark the current user
+        # as Admin and also add him to the Org.
+        userObj = self.request.user
+
+        # Set the user who is creating this Org as the admin of the Org created.
+        orgObj = form.save(commit=False)
+        orgObj.admin = userObj
+        orgObj.save()
+
+        # Add the user to the newly created Org.
+        # Currently a user can only belong to a single org and so the relationship is
+        # represented by a FK field. If in future when a user can belong to multiple orgs
+        # the field could become a ManyToMany field. Modify the below addition accordingly
+        userObj.org = orgObj
+        userObj.save()
+
+        # if a user is already part of any org, he should exit the org first.
+        # Only then should he be allowed to create a new Org.
+        # Not only that, he should unsubscribe from all teams he is part of it.
+
+        context = {'org': orgObj}
+        return render(self.request, 'Organization/org-creation-success.html', context)
 
     def get_form(self, form_class=None):
         if form_class is None:

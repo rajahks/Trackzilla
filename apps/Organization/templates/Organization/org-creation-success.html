@@ -1,0 +1,35 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+      <div class="col-md-6 mx-auto">
+        <div class="card" >
+          <div class="card-body">
+            <h5 class="card-title alert alert-success" role="alert"><i class="fa fa-check-circle " aria-hidden=true> </i> Success</h5>
+            <p class="card-text">
+              Organization <strong>{{ org.get_name }}</strong> created successfully.
+            </p>
+            <hr>
+            <label for="copyUrl"><strong>Join Link</strong></label>
+            <p>Share the join link with people who have to join the Organization.<br> Once
+              they login and visit the link, they will be added to the Organization if they
+              meet the allowed email domain criteria.
+            </p>
+            <div class="input-group mb-3">
+              <input type="text" class="form-control" placeholder=""
+                value="{% if request.is_secure %}https://{% else %}http://{% endif %}{{ request.get_host }}{{ org.get_join_link }}"
+                id="copyUrl" readonly> </input>
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button">Copy</button>
+              </div>
+            </div>
+            <p><strong>Note:</strong> This link can later be found under the Settings tab of the Org page</p>
+            <hr>
+            <a href="{% url 'home' %}" class="btn btn-primary">Home</a>
+            <a href="{% url 'Org:org-detail' pk=org.pk %}" class="btn btn-primary">View Org</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endblock content %}

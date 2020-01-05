@@ -1,0 +1,22 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-10 mx-auto">
+      <div class="card">
+        <h5 class="card-title alert alert-danger" role="alert">
+          <i class="fas fa-times-circle"></i>&nbsp;&nbsp;&nbsp;Error</h5>
+        <div class="card-body">
+          <div class="card-text">
+            We do not allow the user to be part of more than one Org.
+            Exit the org <strong>'{{ cur_org.get_name }}'</strong> and then try to create another Org.
+          </div>
+        </div>
+        <div class="card-footer">
+          <a href="{% url 'home' %}" class="btn btn-primary">Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
