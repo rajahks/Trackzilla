@@ -14,6 +14,8 @@
     {% for team in user.team_member_of.all  %}
       <li class="p-1"><i class="fas fa-users"></i><a href=" {{ team.get_absolute_url }} "> {{ team }} </a></li>
     {% endfor %}
+  {% elif user.org is None %}
+    <i>You are not part of any Org yet. Create or join an Org.</i>
   {% else %}
     <i>You are part of any Teams yet. Create a new one or join an existing one!</i>
   {% endif %}
