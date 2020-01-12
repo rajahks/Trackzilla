@@ -1,0 +1,20 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+      <div class="col-md-6 mx-auto">
+        <div class="card" >
+          <div class="card-body">
+            <h5 class="card-title alert alert-success" role="alert"><i class="fa fa-check-circle " aria-hidden=true> </i> Success</h5>
+            <p class="card-text">
+              Resource <strong>{{ device.get_name }}</strong> created successfully.
+            </p>
+            <a href="{% url 'home' %}" class="btn btn-primary">Home</a>
+            <a href="{% url 'Resource:resource-detail' pk=device.pk %}" class="btn btn-primary">View Device</a>
+            <a href="{% url 'Resource:resource-create' %}" class="btn btn-primary">New resource</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endblock content %}

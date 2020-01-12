@@ -12,12 +12,22 @@
 {% block TeamList %}
   {% if user.team_member_of.all %}
     {% for team in user.team_member_of.all  %}
-      <li class="p-1"><i class="fas fa-users"></i><a href=" {{ team.get_absolute_url }} "> {{ team }} </a></li>
+      <li class="p-1"><i class="fas fa-th-large"></i><a href=" {{ team.get_absolute_url }} "> {{ team }} </a></li>
     {% endfor %}
+  {% elif user.org is None %}
+    <i>You are not part of any Org yet. Create or join an Org.</i>
   {% else %}
     <i>You are part of any Teams yet. Create a new one or join an existing one!</i>
   {% endif %}
 {% endblock TeamList %}
+
+{% block TeamsManagingList %}
+  {% if user.team_admin_for.all %}
+    {% for team in user.team_admin_for.all  %}
+      <li class="p-1"><i class="fas fa-th-large"></i><a href=" {{ team.get_absolute_url }} "> {{ team }} </a></li>
+    {% endfor %}
+  {% endif %}
+{% endblock TeamsManagingList %}
 
 {% block content %}
 {% load staticfiles%}
@@ -46,6 +56,35 @@
                   <td align="right">
                     <a href="{{needActionEntry_dict.ack_url}}" class="btn btn-outline-primary btn-sm">Ack</a>
                     <a href="{{needActionEntry_dict.deny_url}}" class="btn btn-outline-primary btn-sm">Deny</a>
+                  </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+          </table>
+    </div>
+</div>
+{% endif %}
+
+<br>
+
+{% if resInDisputeList|length %}
+<!-- We need to show the 'Resource is dispute that need action' card -->
+<div class="card">
+    <div class="card-header"><strong>Resources in dispute</strong></div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm">
+          <tbody>
+            {% for disputeEntryDict in resInDisputeList %}
+              <tr>
+                  <td>
+                    <i class="fa fa-laptop">&nbsp;&nbsp;&nbsp;</i>
+                    <a href="{{disputeEntryDict.detail_url}}" >
+                        {{ disputeEntryDict.name }}
+                    </a>
+                  </td>
+                  <td align="right">
+                    <a href="{{disputeEntryDict.ack_url}}" class="btn btn-outline-primary btn-sm">Ack</a>
+                    <!-- <a href="{{needActionEntry_dict.deny_url}}" class="btn btn-outline-primary btn-sm">Deny</a> -->
                   </td>
                 </tr>
             {% endfor %}

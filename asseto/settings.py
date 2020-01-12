@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.ChangeHistory.middleware.RequestMiddleware',
+    'apps.Users.middleware.CurrentOrgMiddleware',
 ]
 
 ROOT_URLCONF = 'asseto.urls'
@@ -168,7 +169,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {filename} {funcName} {lineno} [ {message} ]',
+            'format': '{levelname} {asctime} {filename} {funcName} {lineno} {process:d} {thread:d} [ {message} ]',
             'style': '{',
         },
         'simple': {

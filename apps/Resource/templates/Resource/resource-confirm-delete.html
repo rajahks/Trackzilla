@@ -4,12 +4,12 @@
         <form method="POST">
             {% csrf_token %}
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Delete Post</legend>
-                <h2>Are you sure you want to delete resource "{{ object.name }}?"</h2>
+                <legend class="border-bottom mb-4">Delete Resource</legend>
+                <h2>Are you sure you want to delete resource "{{ resource.get_name }}?"</h2>
             </fieldset>
             <div class="form-group">
                 <button class="btn btn-outline-danger" type="submit">Yes, Delete</button>
-                <a class="btn btn-outline-secondary" href="{% url 'Resource:resource-detail' object.id %}">Cancel</a>
+                <a class="btn btn-outline-secondary" href="{% url 'Resource:resource-detail' resource.id %}">Cancel</a>
             </div>
         </form>
     </div>

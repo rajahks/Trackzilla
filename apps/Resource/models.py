@@ -8,8 +8,9 @@ from apps.ChangeHistory.models import ChangeHistoryMixin
 import logging
 logger = logging.getLogger(__name__)
 
-#Get the current custom User Model.
+# Get the current custom User Model.
 User = get_user_model()
+
 
 def CustomProcessDictHook(instance, object_dict, *args, **kwargs):
     """Hook function which will be set to the field 'history__process_dict_hook'
@@ -21,18 +22,21 @@ def CustomProcessDictHook(instance, object_dict, *args, **kwargs):
         object_dict {dict} -- Dictionary returned by model_to_dict.
     """
     for field in object_dict:
-            # for AssetUser
-            if hasattr(instance,field):
-                field_val = getattr(instance,field)
-                
-                if field_val is not None and issubclass(field_val.__class__, User):
-                    object_dict[field] = field_val.get_username()
 
-            # TODO: add other non-serializable field types or fields which need custom
-            # processing.
+        if hasattr(instance, field):
+            field_val = getattr(instance, field)
+            # for AssetUser and Org name
+            if field_val is not None and issubclass(field_val.__class__, User):
+                object_dict[field] = field_val.get_username()
+            elif field_val is not None and issubclass(field_val.__class__, Org):
+                object_dict[field] = field_val.get_name()
+
+        # TODO: add other non-serializable field types or fields which need custom
+        # processing.
     return
 
-def get_loggedin_user(*args,**kwargs):
+
+def get_loggedin_user(*args, **kwargs):
     """Custom function called by the ChangeHistory mixin to store the who changed the field.
     This function returns the value to be stored in the 'who' field.
 
@@ -53,7 +57,8 @@ def get_loggedin_user(*args,**kwargs):
 
     return who
 
-class Resource( ChangeHistoryMixin, models.Model):
+
+class Resource(ChangeHistoryMixin, models.Model):
     # Name of the resource.
     name = models.CharField(max_length=50)
     # serial num used to uniquely identify the resource. Generally AlphaNumeric. 
@@ -71,7 +76,7 @@ class Resource( ChangeHistoryMixin, models.Model):
     # transferred from one person to another person. Current_user will be the one who to
     # whom the resource is assigned and the previous_user will be the one who previously
     # was using the resource.
-    previous_user = models.ForeignKey( User, on_delete=models.SET_NULL, blank=True,
+    previous_user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True,
                                        null=True, related_name='res_prev_used')
 
     # FK to the User who is currently managing the device.
@@ -94,20 +99,22 @@ class Resource( ChangeHistoryMixin, models.Model):
     # Resources which are 'Unassigned' and which are 'Assigned' but not 'Acknowledged'
     # i.e. disputed have to be notified to the device admin.
 
-    RES_UNASSIGNED = 'R_UASS'
-    RES_ASSIGNED = 'R_ASS'
-    RES_ACKNOWLEDGED = 'R_ACK'
-    RES_DISPUTE = 'R_DISP'
+    RES_UNASSIGNED = 'Unassigned'
+    RES_ASSIGNED = 'Assigned'
+    RES_ACKNOWLEDGED = 'Acknowledged'
+    RES_DISPUTE = 'Disputed'
 
+    # Choices to be shown to the user. In each tuple, left is what is saved in DB and
+    # right is shown to the user in drop down list.
     RES_STATUS_CHOICES = [
-        (RES_UNASSIGNED, 'Unassigned'),
+        # (RES_UNASSIGNED, 'Unassigned'),
         (RES_ASSIGNED, 'Assigned'),
         (RES_ACKNOWLEDGED, 'Acknowledged'),
         (RES_DISPUTE, 'Disputed')
     ]
 
     # TODO: Check if the states defined above are ok - should we have a conflicted/disputed status?
-    status = models.CharField(choices=RES_STATUS_CHOICES, default=RES_UNASSIGNED, max_length=20)
+    status = models.CharField(choices=RES_STATUS_CHOICES, default=RES_ASSIGNED, max_length=20)
 
     # Any additional information about the device to go into this field.
     description = models.TextField()
@@ -129,6 +136,9 @@ class Resource( ChangeHistoryMixin, models.Model):
         verbose_name_plural = "resources"
 
     def __str__(self):
+        return self.name
+
+    def get_name(self):
         return self.name
 
     def get_absolute_url(self):

@@ -104,7 +104,7 @@
                 <tr>
                   <th scope="row"> <a href="{{ team.get_absolute_url }} ">{{ team.team_name }} </a></th>
                   <td>{{ team.team_members.count }} member{{ team.team_members.count|pluralize }}</td>
-                  <td>{{ team.sub_teams.count }} sub-team{{team.sub_teams.count|pluralize}}</td>
+                  <td>{{ team.sub_team_list.count }} sub-team{{team.sub_team_list.count|pluralize}}</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -146,14 +146,24 @@
               class="form-control" readonly>
 
             <hr>
-            {% if request.user == Org.admin  %}
-              <strong>Change Team Settings</strong> <br>
+            <strong>Change Team Settings</strong> <br>
+            {% if user == Org.admin  %}
               <a href="{%url 'Org:org-update' pk=Org.pk %}" class="btn btn-outline-success m-3">Edit Settings</a>
-              <hr>
-              <strong>Danger Zone</strong> <br>
-              <a href="{%url 'Org:org-delete' pk=1 %}" class="btn btn-outline-danger m-3">Delete Org</a>
             {% else %}
               <i>To make changes to the org, contact the admin.</i>
+            {% endif %}
+
+            <hr>
+            {% if user in Org.user_set.all or user == Org.admin %}
+              <strong>Danger Zone</strong> <br>
+
+              {% if user in Org.user_set.all %}
+                <a href="{%url 'Org:org-exit' pk=Org.pk %}" class="btn btn-outline-danger m-3">Exit Org</a>
+              {% endif %}
+
+              {% if user == Org.admin %}
+                <a href="{%url 'Org:org-delete' pk=Org.pk %}" class="btn btn-outline-danger m-3">Delete Org</a>
+              {% endif %}
             {% endif %}
 
           </div>

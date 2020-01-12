@@ -2,13 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 # For the resource update view
-from django.contrib.auth import get_user_model # Current user model
-from django.shortcuts import redirect
+from django.contrib.auth import get_user_model  # Current user model
+from django.shortcuts import get_object_or_404, redirect
 
 # Haystack imports for Search
 from haystack.generic_views import SearchView
 from haystack.query import SearchQuerySet
-from haystack.forms import SearchForm, ModelSearchForm
+from haystack.forms import SearchForm
 # Imports for autocomplete
 import simplejson as json
 
@@ -21,17 +21,21 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from apps.Users.mixin import UserHasAccessToResourceMixin
 
-#Imports required for Mail
+# Imports required for Mail
 from django.core import mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.mail import EmailMessage
 
 # imports required for acknowledge and deny views
-from .models import Resource
 from django.http import HttpResponseForbidden, Http404
 from django.contrib.auth.decorators import login_required
+
+from .forms import ResourceCreateForm, ResourceUpdateForm
+from django.views import View
+from apps.Users.middleware import get_current_org
 
 # Logging
 import logging
@@ -74,7 +78,7 @@ class ResourceSearchView(SearchView):
 
         spell_suggestion = self.get_form().get_suggestion()
         query = context['query']
-        if spell_suggestion != None and query.casefold() != spell_suggestion.casefold():
+        if spell_suggestion is not None and query.casefold() != spell_suggestion.casefold():
             context['spell_suggestion'] = spell_suggestion  # Can this ever be a list?
 
         return context
@@ -92,113 +96,188 @@ def autocomplete(request):
     return HttpResponse(the_data, content_type='application/json')
 
 
-class ResourceDetailView(UpdateView):
+class ResourceDetailViewOld(LoginRequiredMixin, UserHasAccessToResourceMixin, UpdateView):
     model = Resource
     template_name = 'Resource/resource-form.html'   # <app>/<model>_<viewtype>.html
     form_class = ResourceDetailForm
 
 
-class ResourceCreateView(LoginRequiredMixin, CreateView):
-    model = Resource
-    # This CBV expects a template named resource_form.html. Overriding.
-    template_name = 'Resource/resource-form.html'
-    # CreateView class will automatically display for us a form asking for these fields.
-    # TODO : Should we ask for device_admin or automatically set it to the logged in user?
-    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
-
-    def form_valid(self, form):
-        # TODO : Add this if we're automatically setting device admin.
-        # form.instance.device_admin = self.request.user
-        return super().form_valid(form)
+class ResourceDetailView(LoginRequiredMixin, UserHasAccessToResourceMixin, View): #TODO: Add has permission mixin
+    """View which handles the detail view of a Resource.
+    It queries the object and creates a custom form object ResourceDetailForm which
+    makes all items readonly.
+    """
+    def get(self, request, *args, pk, **kwargs):
+        resource = get_object_or_404(Resource, pk=pk)
+        resource_form = ResourceDetailForm(instance=resource, org=resource.org)
+        context = {'form': resource_form, 'org': resource.org, 'resource': resource}
+        return render(request, 'Resource/resource-detail.html', context=context)
 
 
-# TODO: Since we can have a Multi tenant app, we should check if the user has access to 
-# this resource. Maybe the UserPassesTestMixin will be useful
+class ResourceHistoryView(LoginRequiredMixin, UserHasAccessToResourceMixin, View):  #TODO: Add has permission mixin
+    """ View to handle showing the history of changes to a resource"""
+
+    def get(self, request, *args, pk, **kwargs):
+        resource = get_object_or_404(Resource, pk=pk)
+        # Process the history records before showing them. We perform the following
+        # 1) Capitalize and replaces '_' with space like labels so that they look good.
+        # 2) Remove the 'previous_user' entry as it redundant. 'current_user' is enough
+        #    to see how the resource moved. 'previous_user' was only required to handle
+        #    sending 3 way mails when device in disputed state.
+        resource_history = resource.history
+        for resEntry in resource_history:
+            listOfChangeDict = resEntry['what']
+            for changeEntryDict in list(listOfChangeDict):
+                if changeEntryDict['field'] == 'previous_user':
+                    listOfChangeDict.remove(changeEntryDict)
+                    continue
+                # for other fields Capitalize the first letter and replace underscore
+                # with spaces.
+                formatted_field_name = changeEntryDict['field']
+                formatted_field_name = formatted_field_name.capitalize()
+                formatted_field_name = formatted_field_name.replace('_', ' ')
+                changeEntryDict['field'] = formatted_field_name
+
+        context = {'org': resource.org, 'resource': resource,
+            'history_list': resource_history}
+        return render(request, 'Resource/resource-history.html', context=context)
+
+
+class ResourceCreateView(LoginRequiredMixin, View):
+    """View to handle Resource Creation.
+
+    Arguments:
+        LoginRequiredMixin -- Ensures user has to login before trying to create a resource.
+        View -- CBV to handle view.
+    """
+
+    def get(self, request, *args, **kwargs):
+        """Creates and shows an empty ResourceCreateForm to allow creation of resource.
+        """
+        current_org = get_current_org()
+        resource_form = ResourceCreateForm(in_org=current_org)
+        context = {'form': resource_form, 'org': current_org}
+        return render(request, 'Resource/resource-new.html', context=context)
+
+    def post(self, request, *args, **kwargs):
+        """Handles validation and saving of a resource. Before saving, it changes
+        the 'org' param to point to the user's org so that the resource belongs to that
+        org. Also sets the resource to assigned state. It also triggers a mail to
+        current_user and device_admin that a resource was created and assigned to them.
+        """
+        current_org = get_current_org()
+        resource_form = ResourceCreateForm(request.POST, in_org=current_org)
+        if resource_form.is_valid():
+            resource_obj = resource_form.save(commit=False)
+            resource_obj.org = current_org
+            resource_obj.status = Resource.RES_ASSIGNED
+            # Finally save the object into the DB
+            resource_obj.save()
+            # TODO: A mail has to be sent to the device admin that a new resource was added
+            # and also that the resource has been assigned to him.
+            context = {'device': resource_obj}
+            return render(request, 'Resource/resource-creation-success.html', context=context)
+        else:
+            # Form is invalid. Display the form back to user with errors.
+            context = {'form': resource_form, 'org': current_org}
+            return render(request, 'Resource/resource-new.html', context=context)
+
+
 # TODO: "Only an Admin can have update rights of fields other than current user".
-class ResourceUpdateView(LoginRequiredMixin, UpdateView):
-    model = Resource
-    template_name = 'Resource/resource-form.html'
-    fields = ['name', 'serial_num', 'current_user', 'device_admin', 'status', 'description', 'org']
-    # TODO: Set the context_object_name to resource so that we can access as resource instead of object.
+class ResourceUpdateView(LoginRequiredMixin, UserHasAccessToResourceMixin, View):
 
-    def form_valid(self, form):
-        # Before we save the data, we need to perform few operations
-        # 1) If the current_user has changed, we need to save the previous current_user in
-        #    previous_user field and also send out a mail to the new user.
-        # 2) If the user has changed then we need to reset the status to Assigned
+    def get(self, request, *args, pk, **kwargs):
+        resource = get_object_or_404(Resource, pk=pk)
+        resource_form = ResourceUpdateForm(instance=resource, in_org=resource.org)
+        context = {'form': resource_form, 'org': resource.org}
+        return render(request, 'Resource/resource-update.html', context=context)
 
-        # Get the model from the form and change the fields.
-        resource = form.save(commit=False)
-        # TODO: This is very bad hack to check if we have done save in the if case and not 
-        # trigger another save later. Need better code path.
-        resSaved = False  
+    def post(self, request, *args, pk, **kwargs):
+        """Handles validation and saving of a resource. Before saving, it changes
+        the 'org' param to point to the user's org so that the resource belongs to that
+        org. Also sets the resource to assigned state. It also triggers a mail to
+        current_user and device_admin that a resource was created and assigned to them.
+        """
+        current_org = get_current_org()
+        res_in_db = get_object_or_404(Resource, pk=pk)
+        resource_form = ResourceUpdateForm(request.POST, in_org=current_org,
+                                           instance=res_in_db)
+        if resource_form.is_valid():
+            # Before we save the data, we need to perform few operations
+            # 1) If the current_user has changed, we need to save the previous current_user in
+            #    previous_user field and also send out a mail to the new user.
+            # 2) If the user has changed then we need to reset the status to Assigned
 
-        # TODO: We might need to send a mail even when device admin is changed.
-        if form.has_changed() and 'current_user' in form.changed_data:
-            # The current user field has changed.
-            #TODO: Can this even be None ? and why is this returning an ID instead of user object
-            # Is it because we are not supplying a model form?
-            prev_user_id = form.initial['current_user']
-            previous_user = None
-            try:
-                userModel = get_user_model()
-                previous_user = userModel.objects.get(pk=prev_user_id)
-            except userModel.Doesnotexit:
-                logger.warning("Get of prev_user_id: %d failed"%(prev_user_id,))  #TODO: is this ever possible for previous. User object getting deleted when updated?
+            resource_obj = resource_form.save(commit=False) # extract the model object.
 
-            
-            resource.previous_user = previous_user
-            resource.status = Resource.RES_ASSIGNED
-            # Save the model and then send out an email
-            resource.save()
-            resSaved = True  #TODO: Remove this bool logic later
-            # Form the ack and deny links by fetching the relative portion from the resource
-            ack_url = self.request.build_absolute_uri(resource.get_acknowledge_url())
-            deny_url = self.request.build_absolute_uri(resource.get_deny_url())
+            hasOwnershipChanged = False # Flag to keep track if device was reassigned
+            if resource_form.has_changed() and 'current_user' in resource_form.changed_data:
+                # The current user field has changed, there was a reassignment.
+                # Fetch the previous user id and name.
+                prev_user_id = resource_form.initial['current_user']
+                previous_user = None
+                try:
+                    userModel = get_user_model()
+                    previous_user = userModel.objects.get(pk=prev_user_id)
+                except userModel.Doesnotexit:
+                    logger.warning("Get of prev_user_id: %d failed"%(prev_user_id,))  #TODO: is this ever possible for previous. User object getting deleted when updated?
 
-# TODO: The from_email should ideally be read from common settings.
+                resource_obj.previous_user = previous_user
+                resource_obj.status = Resource.RES_ASSIGNED
+                hasOwnershipChanged = True
 
-            ret = sendAssignmentMail( from_email = 'no-reply<no-reply@trackzilla.com',
-                        to_email=resource.current_user.email,
-                        cur_user=resource.current_user.get_username(),
-                        prev_user=resource.previous_user.get_username(),
-                        device_name=resource.name, ack_link = ack_url,
+            # Finally save the object into the DB
+            resource_obj.save()
+
+            # If there was a reassignment, send a mail to the new user.
+            if hasOwnershipChanged:
+                # Form the ack and deny links by fetching the relative portion from the resource
+                ack_url = self.request.build_absolute_uri(resource_obj.get_acknowledge_url())
+                deny_url = self.request.build_absolute_uri(resource_obj.get_deny_url())
+
+                # TODO: The from_email should ideally be read from common settings.
+                ret = sendAssignmentMail( from_email = 'no-reply<no-reply@trackzilla.com',
+                        to_email=resource_obj.current_user.email,
+                        cur_user=resource_obj.current_user.get_username(),
+                        prev_user=resource_obj.previous_user.get_username(),
+                        device_name=resource_obj.name, ack_link = ack_url,
                         decline_link = deny_url)
 
-            if ret == 0:
-                #Sending the email failed. Log an error
-                logger.error("Sending an assignment email failed. Device:%s cur_user:%s cur_user_email:%s prev_user:%s"
-                    %(resource.name, resource.current_user.get_username(),
-                    resource.current_user.email, resource.previous_user.get_username()))
+                if ret == 0:
+                    #Sending the email failed. Log an error
+                    logger.error("Sending an assignment email failed. Device:%s cur_user:%s cur_user_email:%s prev_user:%s"
+                        %(resource_obj.name, resource_obj.current_user.get_name(),
+                          resource_obj.current_user.get_email(),
+                          resource_obj.previous_user.get_name()))
 
-        if resSaved is False:
-            resource.save()
-
-        # On successfull update, redirect to the detail page.
-        return redirect('Resource:resource-detail',pk=resource.pk)
-
-    # def test_func(self):
-    #     resource = self.get_object()
-    #     if self.request.user.id == resource.current_user.id:
-    #         return True
-    #     return False
+            # On successfull update, redirect to the detail page.
+            return redirect('Resource:resource-detail',pk=resource_obj.pk)
+        else:
+            # Form is invalid. Display the form back to user with errors.
+            context = {'form': resource_form, 'org': current_org}
+            return render(request, 'Resource/resource-update.html', context=context)
 
 
 class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Resource
     template_name = 'Resource/resource-confirm-delete.html'
     success_url = '/'
+    context_object_name = 'resource'
 
-    # TODO: Hackfest addition. Appropriate name if this is being used ?
+    # Implement the function called by UserPassesTestMixin
+    # Only the device admin should have delete rights.
     def test_func(self):
         resource = self.get_object()
-        # Only the device admin should have delete rights.
         if self.request.user.id == resource.device_admin.id:
             return True
+
+        logger.warning("User %s DENIED access to DeleteView of %s as not an Admin of the device." %
+            (self.request.user.get_email(), resource.get_name()))
         return False
 
-def sendAssignmentMail( from_email, to_email, cur_user, prev_user,
-                        device_name, ack_link, decline_link ):
+
+def sendAssignmentMail(from_email, to_email, cur_user, prev_user,
+                       device_name, ack_link, decline_link):
     """API to send an email when the device is reassigned.
 
     Arguments:
@@ -214,12 +293,12 @@ def sendAssignmentMail( from_email, to_email, cur_user, prev_user,
         int -- 1 for success and 0 for failure. (value returned by send_mail api)
     """
 
-    subject =  device_name + " asssigned"
+    subject = device_name + " asssigned"
 
-    context = { 'cur_user':cur_user, 'device_name': device_name,
-                'prev_user': prev_user, 'ack_link': ack_link,
-                'decline_link': decline_link,
-              }
+    context = {'cur_user': cur_user, 'device_name': device_name,
+               'prev_user': prev_user, 'ack_link': ack_link,
+               'decline_link': decline_link,
+               }
     html_message = render_to_string('mail/assigned.html', context )
     plain_message = strip_tags(html_message)
 
