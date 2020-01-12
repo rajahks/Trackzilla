@@ -273,7 +273,7 @@ class OrgExitView(LoginRequiredMixin, UserHasAccessToOrgMixin, View):
 
 
 @login_required
-def OrgJoinView(request, pk, OrgName, *args, **kwargs):
+def OrgJoinViewOld(request, pk, OrgName, *args, **kwargs): # Moved to OrgJoinView CBV. Remove this once CBV stable
     """View which handles the join url. The org details will be extracted from the url
     and the logged in user will be added to the same.
     Before adding the user, the url is validated. Currently this is a simple check to see
@@ -340,6 +340,101 @@ def OrgJoinView(request, pk, OrgName, *args, **kwargs):
         else:  # User part of a different Org. As of now only one Org allowed.
             return HttpResponse("User %s already part of a different Org %s. Exit that org to join a new one." %
                 (loggedInUser.name, loggedInUser.org.org_name))
+
+
+class OrgJoinView(LoginRequiredMixin, View):
+    """View which handles the join url. The org details will be extracted from the url
+    and the logged in user will be added to the same.
+    Before adding the user, the url is validated. Currently this is a simple check to see
+    if the orgName corresponds to the org id. In future the Org join link could have a
+    hashed component so that guessing the join url is made difficult.
+
+    TODO: Our usecase for join-url is that when a new user clicks on the join link,
+    he should be allowed to sign-up if he doesn't have an account and then once user
+    signs-in should be added to the org. So this would mean, join-url redirects to Sign-in,
+    if user has to create an account he clicks on the Sign-up link. Post Sign-up he should
+    be redirected to the join-url. Not sure how to attach the 'next' url to the sign-up
+    button dynamically. So until that is figured out we will have a 2 step process.
+    Step 1: User has to create an account first
+    Step 2: Click on the join Url. User will be added to Org. Asked to login if required.
+    We also need to consider what happens in case of SSO and tweak this further.
+
+    Arguments:
+        request {HttpRequest} -- The standard request object provided by Django
+        pk {int} -- Primary key of the org extracted from the Url
+        OrgName {slug} -- Slug field(str) extracted from the url
+
+    Raises:
+        Http404: When the join url is invalid.
+
+    Returns:
+        HttpResponse -- Standard Django response
+    """
+    def get(self, request, *args, pk, OrgName, **kwargs):
+        # Fetch the organization based on pk.
+        orgObj = get_object_or_404(Org, pk=pk)
+        # Validate join URL by checking if orgName given for orgID is correct.
+        # This logic may need to be revised in future.
+
+        # Since org name can have spaces, we currently return a slugyfied version of the
+        # org name in join link. Convert org name and Compare with what was passed.
+        if slugify(orgObj.org_name) != OrgName:
+            raise Http404("Invalid Join URL. No such organization exists")
+
+        # Fetch the logged in User
+        loggedInUser = request.user
+
+        # TODO: Add email validation logic here i.e. the admin of the Org should be allowed
+        # to specify rules such as only email ids of particular domain can join this org.
+        # Eg: @abc.com
+        # This way we will prevent random ppl from joining the org even when the link leaks
+        # outside an Org.
+        if not orgObj.is_email_allowed(loggedInUser.email):
+            logger.error("User %s was NOT allowed to join Org %s (%s)." %
+                (loggedInUser.get_email(),OrgName, orgObj.allowed_email_domain))
+
+            context = {'orgName': orgObj.get_name(), 'isError': True,
+                'err_str': "You do not have permission to join this Organization"}
+            return render(request, 'Organization/org_join.html', context=context)
+
+        if loggedInUser.org is None:
+            # User not part of any Org. Add to the Org.
+            # TODO: Should we have a workflow where the admin has to confirm and only then
+            # they will be added to the Org.
+            loggedInUser.org = orgObj
+            loggedInUser.save()
+            logger.info("User %s added to Org %s" % (loggedInUser.email, OrgName))
+            # TODO: Send an email or notify the admin that a new user has been added.
+            success_str = "User '%s' added to org '%s'" % \
+                (loggedInUser.get_name(), loggedInUser.org.org_name)
+            context = {'orgName': orgObj.get_name(), 'isError': False,
+                'success_str': success_str}
+            return render(request, 'Organization/org_join.html', context=context)
+        elif loggedInUser.org is not None and loggedInUser.org == orgObj:
+            err_str = "User '%s' already part of org '%s'" % \
+                (loggedInUser.get_name(), loggedInUser.org.get_name())
+            context = {'orgName': orgObj.get_name(), 'isError': True,
+                'err_str': err_str}
+            return render(request, 'Organization/org_join.html', context=context)
+        else:  # User part of a different Org. As of now only one Org allowed.
+            err_str = "User '%s' already part of a different Org %s. Exit that org to join a new one." % \
+                (loggedInUser.get_name(), loggedInUser.org.get_name())
+            context = {'orgName': orgObj.get_name(), 'isError': True,
+                'err_str': err_str}
+            return render(request, 'Organization/org_join.html', context=context)
+
+    def post(self, request, *args, **kwargs):
+        """In future we could have a 'confirm' step where the user is shown a question
+        'Are you sure you want to join the Org' followed by Yes/No buttons.
+        Only if the user choses Yes should he be added to the Org.
+
+        Clicking on Yes should be a POST form submit to this view. Move the Org addition
+        part to this function. Also note that before the user is added we need to do all
+        the checks similar to Get request like is url valid, allowed to join etc as a
+        user might do a POST directly and join an Org he is not allowed to.
+        """
+        pass
+
 
 
 # CRUD views for team
