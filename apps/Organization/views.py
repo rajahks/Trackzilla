@@ -17,7 +17,6 @@ from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
 from apps.Users.mixin import UserHasAccessToOrgMixin, UserCanDeleteOrgMixin
 from django.utils.text import slugify
-from django.http import HttpResponseForbidden
 
 # configure Logger
 import logging
