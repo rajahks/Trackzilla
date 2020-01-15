@@ -50,7 +50,7 @@ def resources_list(request):
     return render(request, 'Resource/resources_list.html', context)
 
 
-class ResourceSearchView(SearchView):
+class ResourceSearchView(LoginRequiredMixin, SearchView):
     """Custom SearchView to tweak the search behavior performed on the resources.
 
     Arguments:
@@ -59,9 +59,6 @@ class ResourceSearchView(SearchView):
     """
 
     template_name = 'search/search.html'
-    queryset = SearchQuerySet().all()
-    # TODO: Filter SearchQuerySet to contain only resources belonging to the user's org
-    # queryset = SearchQuerySet().filter(org='<orgOfUser>') OR override get_queryset()
     form_class = SearchForm  # Use ModelSeachForm if we need to restrict search to only few models
 
     def get_context_data(self, *args, **kwargs):
@@ -83,9 +80,37 @@ class ResourceSearchView(SearchView):
 
         return context
 
+    def get_queryset(self):
+        cur_user_org = get_current_org()
 
+        # In case we want all results. But we want Org specific results, hence
+        # commented the below line and added the filter.
+        # queryset = SearchQuerySet().all()
+
+        # SearchQuerySet().all() returns all records. However, we want to restrict the
+        # results to the currently logged in users org. We save the Resource's org as an
+        # integer attribute in each record. Filter the results using that.
+        # This is very important else people from different orgs will be shown resources
+        # not in their org.
+        queryset = SearchQuerySet().filter(org_id=cur_user_org.id)
+        return queryset
+
+
+@login_required
 def autocomplete(request):
-    sqs = SearchQuerySet().autocomplete(device_name_auto=request.GET.get('query', ''))
+    """View called when the url 'search/autocomplete/' is hit. It is called using
+    a AJAX call when the user enters text
+
+    Arguments:
+        request {HttpRequest} -- Standard Django Request object
+
+    Returns:
+        [json] -- returns a json response containing a list of suggestions which
+                  would match the user's input. List set against a key 'suggestions'
+    """
+    cur_user_org = get_current_org()
+    sqs_org = SearchQuerySet().filter(org_id=cur_user_org.id)
+    sqs = sqs_org.autocomplete(device_name_auto=request.GET.get('query', ''))
     # TODO: [:5] at the end of the above sqs statement to display only top 5
     suggestions = [result.object.name for result in sqs]
     # Make sure you return a JSON object, not a bare list.
