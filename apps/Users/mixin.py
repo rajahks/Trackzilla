@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from apps.Resource.models import Resource
 from apps.Organization.models import Team, Org
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 # Logging
 import logging
 
@@ -158,4 +159,31 @@ class UserCanDeleteOrgMixin(UserPassesTestMixin):
                 return False
         else:
             logger.error("Object not of type Org. Type:%s" % (type(obj),))
+            return False
+
+
+class UserHasAccessToViewUserMixin(UserPassesTestMixin):
+
+    # Override the function from UserPassesTestMixin to determine if user has
+    # access to the object.
+    def test_func(self):
+        # Fetch the object.
+        obj = self.get_object()
+        user_model = get_user_model()  # Should return AssetUser model
+
+        if isinstance(obj, user_model):
+            if obj.org == self.request.user.org:
+                # User Object part of logged in user's current org.
+                # In future if a user can be part of multiple Orgs then change this
+                # condition to "obj.org in self.request.user.orgs.all()"
+                logger.debug("User %s given access to view user %s as both are part of Org %s" %
+                    (self.request.user.get_email(), obj.get_email(), obj.org.get_name()))
+                return True
+            else:
+                logger.warning("User %s (%s) DENIED access to view user %s (%s) as both are not part of same Org" %
+                    (self.request.user.get_email(), self.request.user.org,
+                     obj.get_email(), obj.org.get_name()))
+                return False
+        else:
+            logger.error("Object not of type AssetUser. Type:%s" % (type(obj),))
             return False

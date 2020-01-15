@@ -7,11 +7,13 @@ from django.views.generic import (
     CreateView,
     UpdateView,
     DeleteView,
+    DetailView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from apps.Resource.models import Resource
 from .middleware import get_current_org
+from .mixin import UserHasAccessToViewUserMixin
 
 import logging
 logger = logging.getLogger(__name__)
@@ -135,10 +137,63 @@ def register(request):
     return render(request, 'Users/register.html', {'form': form})
 
 
-class UserDetailView(UpdateView):
-    model = User
-    template_name = 'Users/user-form.html'
-    form_class = UserDetailForm
+class UserDetailView(LoginRequiredMixin, UserHasAccessToViewUserMixin,
+                     DetailView):
+    model = get_user_model()
+    template_name = 'Users/user_detail.html'
+    # form_class = UserDetailForm
+    context_object_name = 'user_obj'    # The user we are viewing.
+                                        # The other user would be logged in user.
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user_obj = self.get_object()
+
+        # A user will have resources he is using and also resources he would be
+        # managing. He could also be using the resource he is managing.
+        # Rather than showing these in separate tabs, we will display both of this info
+        # in a single tab and show the role. Role will have 'User' or 'Admin' or both
+        # 'User' and 'Admin' if he is using a resource he is managing.
+        # Since forming this data is easier here compared to a template, we form it and
+        # add it to the context.
+        # The information is sent as a dict with entries as follows
+        # {
+        #     '<pk of res (integer) >': { 'res_obj': <resource object>,
+        #                                 'role_list': [ 'User', 'Admin']
+        #                               }
+        # }
+
+        res_dict = {}
+        for res in user_obj.res_being_used.all():
+            res_dict[res.pk] = {'res_obj': res, 'role_list': ['User']}
+
+        for res in user_obj.res_being_managed.all():
+            if res.pk in res_dict.keys():
+                # Dict entry already present
+                res_dict[res.pk]['role_list'].append('Admin')
+            else:
+                # Dict entry no present. Create a new one
+                res_dict[res.pk] = {'res_obj': res, 'role_list': ['Admin']}
+
+        ctx['res_dict'] = res_dict
+
+        # Similar to resources above, create a teams-roles dict.
+        teams_dict = {}
+        for team in user_obj.team_member_of.all():
+            teams_dict[team.pk] = {'team_obj': team, 'role_list': ['Member']}
+
+        for team in user_obj.team_admin_for.all():
+            if team.pk in teams_dict.keys():
+                # Dict entry already present
+                teams_dict[team.pk]['role_list'].append('Admin')
+            else:
+                # Dict entry no present. Create a new one
+                teams_dict[team.pk] = {'team_obj': team, 'role_list': ['Admin']}
+
+        ctx['teams_dict'] = teams_dict
+
+        return ctx
+
 
 # TODO: Is the create view required? Also the password set through this is not
 # getting hashed. Evaluate what changes are required for this.
