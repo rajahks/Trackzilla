@@ -8,12 +8,16 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
     DetailView,
+    View
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from apps.Resource.models import Resource
 from .middleware import get_current_org
-from .mixin import UserHasAccessToViewUserMixin
+from .mixin import UserHasAccessToViewUserMixin, UserCanDelUserMixin
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 import logging
 logger = logging.getLogger(__name__)
@@ -206,6 +210,7 @@ class UserCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         return super().form_valid(form)
 
+
 # TODO: Should be allow the user to update the password from this view?
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
@@ -216,7 +221,82 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class UserDeleteView(LoginRequiredMixin, DeleteView):
+class UserDeleteViewOld(LoginRequiredMixin, DeleteView):
     model = User
     template_name = 'Users/user-confirm-delete.html'
     success_url = '/'
+
+
+class UserDeleteView(LoginRequiredMixin, UserCanDelUserMixin, View):
+    def get(self, request, pk):
+        user_obj = get_object_or_404(User, id=pk)
+
+        # An Org admin cannot delete a user if:
+        # 1) User part of any teams. User should be removed from all teams.
+        # 2) User managed any teams. Someone else should be made admin or team should
+        #    be deleted.
+        # 3) User has any Resources. All the resources should be reassigned or deleted.
+        # 4)User manages any resources. Someone else should be made admin or resource
+        #    should be deleted.
+        # 5) User is the admin of the Org - Only an admin can delete users but an admin
+        #    cannot delete himself.
+        # Only if the user object doesnot satisfy any of the above cases,
+        # should it be allowed to be deleted.
+        # NOTE: However there is one corner case where there is only one user in
+        # the org and that is the org admin. Since he cannot re-assin the admin role
+        # to someone else, he would not be allowed to exit the Org. In such case, the
+        # only option is to allow deletion of the Org. we should manually remove the admin
+        # and allow deletion.
+
+        team_list = user_obj.team_member_of.all()  # Teams part of
+        team_admin_list = user_obj.team_admin_for.all()  # Admin for teams
+        res_list = user_obj.res_being_used.all()  # resources being used.
+        res_admin_list = user_obj.res_being_managed.all()  # Resource being managed.
+        org_admin_list = user_obj.admin_for_org.all()  # Admin for Orgs
+
+        # TODO: org_admin_list needs a bit of fix up. Firstly only an org admin can access
+        # the delete user page. So what should we do when the admin tries to delete
+        # himself? Currently we should it in the action list that he org admin has to be
+        # reassigned. The org admin has to be changed and the new admin has to now delete
+        # the old admin's account. Needs a better scheme.
+
+        # Check if there are teams and resources in the User's name.
+        # Show the list to admin along with the action to be taken.
+        if (len(team_list) > 0 or len(team_admin_list) > 0 or
+                len(res_list) > 0 or len(res_admin_list) > 0) or len(org_admin_list) > 0:
+            # Show the user, the list of actions he has to take.
+            context = {'res_list': res_list, 'team_list': team_list,
+                       'team_admin_list': team_admin_list,
+                       'res_admin_list': res_admin_list,
+                       'org_admin_list': org_admin_list, 'del_user': user_obj}
+            return render(request, 'Users/user_del_criteria.html', context=context)
+        else:
+            # Del criteria met. show a confirm delete page.
+            context = {'del_user': user_obj}
+            return render(request, 'Users/user-confirm-delete.html', context=context)
+
+    def post(self, request, pk):
+        user_obj = get_object_or_404(User, id=pk)
+
+        # Check if the user meets the del criteria. This should ideally be shown
+        # when the user does a GET. But in case we have users who do a direct POST
+        # using some tools then we should not allow it.
+        # The below condition catches those cases and prevents accidental delete.
+
+        team_list = user_obj.team_member_of.all()  # Teams part of
+        team_admin_list = user_obj.team_admin_for.all()  # Admin for teams
+        res_list = user_obj.res_being_used.all()  # resources being used.
+        res_admin_list = user_obj.res_being_managed.all()  # Resource being managed.
+        org_admin_list = user_obj.admin_for_org.all()  # Admin for Orgs
+
+        # Check if there are teams and resources in the User's name.
+        # Show the exit_
+        if (len(team_list) > 0 or len(team_admin_list) > 0 or
+                len(res_list) > 0 or len(res_admin_list) > 0) or len(org_admin_list) > 0:
+            return HttpResponseRedirect(reverse('user-delete',
+                                                kwargs={'pk': user_obj.pk}))
+
+        # Criteria met. Lets delete the user.
+        user_obj.delete()
+        # redirect to Home Page.
+        return HttpResponseRedirect(reverse('home'))

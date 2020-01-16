@@ -1,0 +1,76 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-10 mx-auto">
+      <div class="card">
+        <h5 class="card-title alert alert-warning" role="alert">
+          <i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;&nbsp;Action required</h5>
+        <div class="card-body">
+          <div class="card-text">
+            <p>You need to take the following action before the user
+              <strong>{{del_user.get_name}}</strong> can be deleted:</p>
+            {% if res_list %}
+            <hr>
+            <strong>Resources in user's name:</strong>
+            Re-assign these resources to someone else
+            <ul class="pt-2">
+              {% for res in res_list %}
+              <li><a href="{% url 'Resource:resource-detail' res.pk %}">{{ res.get_name }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if res_admin_list %}
+            <hr>
+            <strong>Resources the user manages:</strong>
+            Re-assign someone else as admin to these resources.
+            <ul class="pt-2">
+              {% for res in res_admin_list %}
+              <li><a href="{% url 'Resource:resource-detail' res.pk %}">{{ res.get_name }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if team_list %}
+            <hr>
+            <strong>Teams the user is part of:</strong>
+            Remove the user from the following teams.
+            <ul class="pt-2">
+              {% for team in team_list %}
+              <li><a href="{% url 'Org:team-detail' team.pk %}">{{ team.get_name }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if team_admin_list %}
+            <hr>
+            <strong>Teams the user is admin for:</strong>
+            Re-assign someone else in the team as admin for the team.
+            <ul class="pt-2">
+              {% for team in team_admin_list %}
+              <li><a href="{% url 'Org:team-detail' team.pk %}">{{ team.get_name }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if org_admin_list %}
+            <hr>
+            <strong>Orgs the user manages:</strong>
+            The user has to be removed from the admin role of these Orgs.
+            <ul class="pt-2">
+              {% for org in org_admin_list %}
+              <li><a href="{% url 'Org:org-detail' org.pk %}">{{ org.get_name }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-footer">
+          <a href="{% url 'user-delete' del_user.pk %}" class="btn btn-primary">Refresh</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

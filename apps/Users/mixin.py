@@ -187,3 +187,47 @@ class UserHasAccessToViewUserMixin(UserPassesTestMixin):
         else:
             logger.error("Object not of type AssetUser. Type:%s" % (type(obj),))
             return False
+
+
+class UserCanDelUserMixin(UserPassesTestMixin):
+    # Override the function from UserPassesTestMixin to determine if user has
+    # access to delete the user object.
+    def test_func(self):
+        # Fetch the User object by using the pk from the url.
+        # Note: It is very important that we need to have the 'pk' as without it we will
+        # not be able to fetch the object.
+
+        if 'pk' not in self.kwargs.keys():
+            logger.error("pk not present. Cannot fetch User object. Denying access by returning False")
+            return False
+
+        # Fetch the object.
+        user_model = get_user_model()  # Should be AssetUser
+        obj = get_object_or_404(user_model, pk=self.kwargs['pk'])
+        if isinstance(obj, user_model):
+            # TODO: check if user's Org is not None.
+            # first check if the logged in user and the user obj belong to the same Org
+            if obj.org != self.request.user.org:
+                logger.warning("User %s (%s) DENIED access to view user %s (%s) as both are not part of same Org" %
+                    (self.request.user.get_email(), self.request.user.org,
+                     obj.get_email(), obj.org.get_name()))
+                return False
+
+            # Now check if the logged in user is the admin of the Org as only org admin
+            # can delete a user.
+            if obj.org.admin != self.request.user:
+                # Logged in user is NOT the Admin of the Org that the user is part of.
+                # In future if we can have Multiple Admins then change this
+                # condition to "self.request.user not in obj.org.admin.all()"
+                logger.warning("User %s (%s) DENIED access to delete '%s' user as NOT an admin of Org" %
+                    (self.request.user.get_email(), self.request.user.org.get_name(),
+                     obj.get_email()))
+                return False
+
+            # User passed all tests. Allow access.
+            logger.debug("User '%s' given access to delete '%s' user as user is an admin." %
+                (self.request.user.get_email(), obj.get_email()))
+            return True
+        else:
+            logger.error("Object not of type AssetUser. Type:%s" % (type(obj),))
+            return False
