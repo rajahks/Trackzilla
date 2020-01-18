@@ -172,6 +172,14 @@ class UserHasAccessToViewUserMixin(UserPassesTestMixin):
         user_model = get_user_model()  # Should return AssetUser model
 
         if isinstance(obj, user_model):
+            if obj.org is None:
+                # If the user doesnot belong to any Org deny access. A user can only see
+                # users from the same Org.
+                logger.warning("User %s (%s) DENIED access to view user %s who is not part of any Org" %
+                               (self.request.user.get_email(), self.request.user.org,
+                                obj.get_email()))
+                return False
+
             if obj.org == self.request.user.org:
                 # User Object part of logged in user's current org.
                 # In future if a user can be part of multiple Orgs then change this
@@ -205,7 +213,15 @@ class UserCanDelUserMixin(UserPassesTestMixin):
         user_model = get_user_model()  # Should be AssetUser
         obj = get_object_or_404(user_model, pk=self.kwargs['pk'])
         if isinstance(obj, user_model):
-            # TODO: check if user's Org is not None.
+            if obj.org is None:
+                # If the user doesnot belong to any Org deny access. A user can only see
+                # users from the same Org.
+                logger.warning("User %s (%s) DENIED access to delete user %s who is not "
+                               "part of any Org" % (self.request.user.get_email(),
+                                                    self.request.user.org,
+                                                    obj.get_email()))
+                return False
+
             # first check if the logged in user and the user obj belong to the same Org
             if obj.org != self.request.user.org:
                 logger.warning("User %s (%s) DENIED access to view user %s (%s) as both are not part of same Org" %
