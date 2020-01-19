@@ -221,12 +221,10 @@ class UserCreateView(LoginRequiredMixin, CreateView):
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     template_name = 'Users/user-form.html'
-    fields = ['name', 'password']
+    fields = ['name']
 
     def get_form(self):
         form = super(UserUpdateView, self).get_form()
-        form.initial['password'] = ""
-        # form.fields['password'].widget.value = ""
         return form
 
     def form_valid(self, form):
