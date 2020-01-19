@@ -18,6 +18,9 @@ from .mixin import UserHasAccessToViewUserMixin, UserCanDelUserMixin
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 import logging
 logger = logging.getLogger(__name__)
@@ -201,6 +204,7 @@ class UserDetailView(LoginRequiredMixin, UserHasAccessToViewUserMixin,
 
 # TODO: Is the create view required? Also the password set through this is not
 # getting hashed. Evaluate what changes are required for this.
+# TODO: Not exposing this for now. A user will need to signup.
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     # This CBV expects a template named user_form.html. Overriding.
@@ -212,10 +216,18 @@ class UserCreateView(LoginRequiredMixin, CreateView):
 
 
 # TODO: Should be allow the user to update the password from this view?
+# Added a different view to change password. From that view both admin and the user can
+# change the password. Will not be exposing this update view as of now.
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     template_name = 'Users/user-form.html'
-    fields = ['name', 'email', 'org']
+    fields = ['name', 'password']
+
+    def get_form(self):
+        form = super(UserUpdateView, self).get_form()
+        form.initial['password'] = ""
+        # form.fields['password'].widget.value = ""
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
@@ -300,3 +312,58 @@ class UserDeleteView(LoginRequiredMixin, UserCanDelUserMixin, View):
         user_obj.delete()
         # redirect to Home Page.
         return HttpResponseRedirect(reverse('home'))
+
+
+class ChangePasswordView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """ Using this view, the user can change his password. Since a user has to login to
+    access this view and until we have a Forgot password flow, we will allow the Org admin
+    to access this view and change the password.
+    In summary, the user and the org admin can change the password of the user.
+    TODO: Revise this workflow in future.
+    Also since we are allowing the admin to change the password, we are using the
+    SetPasswordForm instead of PasswordResetForm which asks for the current password.
+    """
+
+    def get(self, request, *args, pk, **kwargs):
+        user = self.get_object()
+        form = SetPasswordForm(user)
+        return render(request, 'Users/change_password.html', {'form': form})
+
+    def get_object(self):
+        if 'pk' not in self.kwargs.keys():
+            logger.error("pk not present. Cannot fetch User object. Returning None")
+            return None
+
+        return get_object_or_404(User, id=self.kwargs['pk'])
+
+    def post(self, request, *args, pk, **kwargs):
+        user = self.get_object()
+        form = SetPasswordForm(user, request.POST)  # TODO: Change to PasswordChangeForm when user whats to change.
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important!
+            messages.success(request, 'Password was successfully updated!')
+            return redirect('change-password', pk)
+        else:
+            messages.error(request, 'Please correct the error below.')
+            return render(request, 'Users/change_password.html', {'form': form})
+
+    def test_func(self):
+        user = self.get_object()
+        # Only 2 people should be allowed to change password the user and the org admin if
+        # the user belongs to an Org.
+        # TODO: Move this to a separate Mixin in future.
+        if self.request.user == user:
+            logger.debug("User %s given access to change-password of self" %
+                         user.get_name())
+            return True
+        elif user.org is not None and user.org.admin == self.request.user:
+            logger.debug("Admin %s(%s) given access to change-password of user belonging"
+                         " to same org" % (user.org.admin.get_name(), user.org.get_name())
+                         )
+            return True
+        else:
+            logger.debug("User %s(%s) denied access to change-password of %s(%s)" % (
+                         self.request.user.get_name(), self.request.user.org,
+                         user.get_name(), user.org))
+            return False

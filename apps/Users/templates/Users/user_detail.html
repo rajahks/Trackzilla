@@ -105,8 +105,11 @@
             <!-- If logged in user is the Org admin then give an option to delete the user -->
             {% if user == user_obj.org.admin %}
               <a href="{%url 'user-delete' pk=user_obj.pk %}" class="btn btn-outline-danger m-3">Delete User</a>
+              <a href="{% url 'change-password' pk=user_obj.pk %}" class="btn btn-outline-danger m-3">Change Password</a>
+            {% elif user == user_obj %}
+              <a href="{% url 'change-password' pk=user_obj.pk %}" class="btn btn-outline-danger m-3">Change Password</a>
             {% else %}
-              <i>To delete the user, contact the Org admin
+              <i>To delete the user or change password, contact the Org admin
                 <strong> {{user_obj.org.admin.get_name }} ({{user_obj.org.admin.get_email}})
                 </strong></i>
             {% endif %}
