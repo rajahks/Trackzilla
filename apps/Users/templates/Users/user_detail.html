@@ -1,0 +1,123 @@
+{% extends "Generic/base.html" %}
+{% block content %}
+
+<h2><i class="fas fa-user"></i> {{user_obj.get_name}} </h2>
+<h5></h5>
+<br>
+<i>Organization:
+  <a href="{% url 'Org:org-detail' pk=user_obj.org.pk %}">
+    {{ user_obj.org.get_name }}
+  </a>
+</i>
+<br><br>
+<div class="card">
+  <div class="card-header">
+    <nav>
+      <div class="nav nav-tabs card-header-tabs" id="nav-tab" role="tablist">
+        <a class="nav-item nav-link active" id="nav-resources-tab" data-toggle="tab" href="#nav-resources" role="tab"> <i
+            class="fas fa-laptop"></i> Resources</a>
+        <a class="nav-item nav-link" id="nav-teams-tab" data-toggle="tab" href="#nav-teams" role="tab"><i
+            class="fas fa-th-large"></i> Teams</a>
+        <a class="nav-item nav-link" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab"><i
+            class="fas fa-cog"></i> Settings</a>
+      </div>
+    </nav>
+  </div>
+  <div class="card-body p-0">
+    <div class="tab-content" id="nav-tabContent">
+      <div class="tab-pane fade show active" id="nav-resources" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <p class="mb-0"> Using {{ user_obj.res_being_used.count }} resource{{ user_obj.res_being_used.count|pluralize:",s" }}
+              and Managing {{ user_obj.res_being_managed.count }} resource{{ user_obj.res_being_managed.count|pluralize:",s" }}
+            </p>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for res_pk, res_role_dict in res_dict.items %}
+                <tr>
+                  <th scope="row"> <a href="{% url 'Resource:resource-detail' res_pk %} ">
+                    {{ res_role_dict.res_obj.get_name }} </a>
+                  </th>
+                  <td>
+                  {% for role in res_role_dict.role_list %}
+                  <span class="badge badge-secondary">{{ role }}</span>
+                  {%endfor%}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="nav-teams" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <p class="mb-0"> Member of {{ user_obj.team_member_of.count }} team{{ user_obj.team_member_of.count|pluralize:",s" }}
+              and Managing {{ user_obj.team_admin_for.count }} team{{ user_obj.team_admin_for.count|pluralize:",s" }} </p>
+          </div>
+          <div class="card-body p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for team_pk, team_role_dict in teams_dict.items %}
+                <tr>
+                  <th scope="row"> <a href="{% url 'Org:team-detail' team_pk %} ">
+                    {{ team_role_dict.team_obj.get_name }} </a>
+                  </th>
+                  <td>
+                  {% for role in team_role_dict.role_list %}
+                  <span class="badge badge-secondary">{{ role }}</span>
+                  {%endfor%}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="nav-settings" role="tabpanel">
+        <div class="card">
+          <div class="card-body">
+            <div>
+              <label for="emailID"><strong>Email ID</strong></label>
+              <input type="text" class="form-control" id="emailID" value="{{ user_obj.get_email }}" disabled>
+            </div>
+            <hr>
+
+            <strong>Danger Zone</strong> <br>
+            <!-- If logged in user is the Org admin then give an option to delete the user -->
+            {% if user == user_obj.org.admin %}
+              <a href="{%url 'user-delete' pk=user_obj.pk %}" class="btn btn-outline-danger m-3">Delete User</a>
+              <a href="{% url 'change-password' pk=user_obj.pk %}" class="btn btn-outline-danger m-3">Change Password</a>
+            {% elif user == user_obj %}
+              <a href="{% url 'change-password' pk=user_obj.pk %}" class="btn btn-outline-danger m-3">Change Password</a>
+            {% else %}
+              <i>To delete the user or change password, contact the Org admin
+                <strong> {{user_obj.org.admin.get_name }} ({{user_obj.org.admin.get_email}})
+                </strong></i>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

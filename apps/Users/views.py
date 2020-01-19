@@ -7,11 +7,20 @@ from django.views.generic import (
     CreateView,
     UpdateView,
     DeleteView,
+    DetailView,
+    View
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from apps.Resource.models import Resource
 from .middleware import get_current_org
+from .mixin import UserHasAccessToViewUserMixin, UserCanDelUserMixin
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 import logging
 logger = logging.getLogger(__name__)
@@ -135,13 +144,67 @@ def register(request):
     return render(request, 'Users/register.html', {'form': form})
 
 
-class UserDetailView(UpdateView):
-    model = User
-    template_name = 'Users/user-form.html'
-    form_class = UserDetailForm
+class UserDetailView(LoginRequiredMixin, UserHasAccessToViewUserMixin,
+                     DetailView):
+    model = get_user_model()
+    template_name = 'Users/user_detail.html'
+    # form_class = UserDetailForm
+    context_object_name = 'user_obj'    # The user we are viewing.
+                                        # The other user would be logged in user.
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user_obj = self.get_object()
+
+        # A user will have resources he is using and also resources he would be
+        # managing. He could also be using the resource he is managing.
+        # Rather than showing these in separate tabs, we will display both of this info
+        # in a single tab and show the role. Role will have 'User' or 'Admin' or both
+        # 'User' and 'Admin' if he is using a resource he is managing.
+        # Since forming this data is easier here compared to a template, we form it and
+        # add it to the context.
+        # The information is sent as a dict with entries as follows
+        # {
+        #     '<pk of res (integer) >': { 'res_obj': <resource object>,
+        #                                 'role_list': [ 'User', 'Admin']
+        #                               }
+        # }
+
+        res_dict = {}
+        for res in user_obj.res_being_used.all():
+            res_dict[res.pk] = {'res_obj': res, 'role_list': ['User']}
+
+        for res in user_obj.res_being_managed.all():
+            if res.pk in res_dict.keys():
+                # Dict entry already present
+                res_dict[res.pk]['role_list'].append('Admin')
+            else:
+                # Dict entry no present. Create a new one
+                res_dict[res.pk] = {'res_obj': res, 'role_list': ['Admin']}
+
+        ctx['res_dict'] = res_dict
+
+        # Similar to resources above, create a teams-roles dict.
+        teams_dict = {}
+        for team in user_obj.team_member_of.all():
+            teams_dict[team.pk] = {'team_obj': team, 'role_list': ['Member']}
+
+        for team in user_obj.team_admin_for.all():
+            if team.pk in teams_dict.keys():
+                # Dict entry already present
+                teams_dict[team.pk]['role_list'].append('Admin')
+            else:
+                # Dict entry no present. Create a new one
+                teams_dict[team.pk] = {'team_obj': team, 'role_list': ['Admin']}
+
+        ctx['teams_dict'] = teams_dict
+
+        return ctx
+
 
 # TODO: Is the create view required? Also the password set through this is not
 # getting hashed. Evaluate what changes are required for this.
+# TODO: Not exposing this for now. A user will need to signup.
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     # This CBV expects a template named user_form.html. Overriding.
@@ -151,17 +214,154 @@ class UserCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         return super().form_valid(form)
 
+
 # TODO: Should be allow the user to update the password from this view?
+# Added a different view to change password. From that view both admin and the user can
+# change the password. Will not be exposing this update view as of now.
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     template_name = 'Users/user-form.html'
-    fields = ['name', 'email', 'org']
+    fields = ['name']
+
+    def get_form(self):
+        form = super(UserUpdateView, self).get_form()
+        return form
 
     def form_valid(self, form):
         return super().form_valid(form)
 
 
-class UserDeleteView(LoginRequiredMixin, DeleteView):
+class UserDeleteViewOld(LoginRequiredMixin, DeleteView):
     model = User
     template_name = 'Users/user-confirm-delete.html'
     success_url = '/'
+
+
+class UserDeleteView(LoginRequiredMixin, UserCanDelUserMixin, View):
+    def get(self, request, pk):
+        user_obj = get_object_or_404(User, id=pk)
+
+        # An Org admin cannot delete a user if:
+        # 1) User part of any teams. User should be removed from all teams.
+        # 2) User managed any teams. Someone else should be made admin or team should
+        #    be deleted.
+        # 3) User has any Resources. All the resources should be reassigned or deleted.
+        # 4)User manages any resources. Someone else should be made admin or resource
+        #    should be deleted.
+        # 5) User is the admin of the Org - Only an admin can delete users but an admin
+        #    cannot delete himself.
+        # Only if the user object doesnot satisfy any of the above cases,
+        # should it be allowed to be deleted.
+        # NOTE: However there is one corner case where there is only one user in
+        # the org and that is the org admin. Since he cannot re-assin the admin role
+        # to someone else, he would not be allowed to exit the Org. In such case, the
+        # only option is to allow deletion of the Org. we should manually remove the admin
+        # and allow deletion.
+
+        team_list = user_obj.team_member_of.all()  # Teams part of
+        team_admin_list = user_obj.team_admin_for.all()  # Admin for teams
+        res_list = user_obj.res_being_used.all()  # resources being used.
+        res_admin_list = user_obj.res_being_managed.all()  # Resource being managed.
+        org_admin_list = user_obj.admin_for_org.all()  # Admin for Orgs
+
+        # TODO: org_admin_list needs a bit of fix up. Firstly only an org admin can access
+        # the delete user page. So what should we do when the admin tries to delete
+        # himself? Currently we should it in the action list that he org admin has to be
+        # reassigned. The org admin has to be changed and the new admin has to now delete
+        # the old admin's account. Needs a better scheme.
+
+        # Check if there are teams and resources in the User's name.
+        # Show the list to admin along with the action to be taken.
+        if (len(team_list) > 0 or len(team_admin_list) > 0 or
+                len(res_list) > 0 or len(res_admin_list) > 0) or len(org_admin_list) > 0:
+            # Show the user, the list of actions he has to take.
+            context = {'res_list': res_list, 'team_list': team_list,
+                       'team_admin_list': team_admin_list,
+                       'res_admin_list': res_admin_list,
+                       'org_admin_list': org_admin_list, 'del_user': user_obj}
+            return render(request, 'Users/user_del_criteria.html', context=context)
+        else:
+            # Del criteria met. show a confirm delete page.
+            context = {'del_user': user_obj}
+            return render(request, 'Users/user-confirm-delete.html', context=context)
+
+    def post(self, request, pk):
+        user_obj = get_object_or_404(User, id=pk)
+
+        # Check if the user meets the del criteria. This should ideally be shown
+        # when the user does a GET. But in case we have users who do a direct POST
+        # using some tools then we should not allow it.
+        # The below condition catches those cases and prevents accidental delete.
+
+        team_list = user_obj.team_member_of.all()  # Teams part of
+        team_admin_list = user_obj.team_admin_for.all()  # Admin for teams
+        res_list = user_obj.res_being_used.all()  # resources being used.
+        res_admin_list = user_obj.res_being_managed.all()  # Resource being managed.
+        org_admin_list = user_obj.admin_for_org.all()  # Admin for Orgs
+
+        # Check if there are teams and resources in the User's name.
+        # Show the exit_
+        if (len(team_list) > 0 or len(team_admin_list) > 0 or
+                len(res_list) > 0 or len(res_admin_list) > 0) or len(org_admin_list) > 0:
+            return HttpResponseRedirect(reverse('user-delete',
+                                                kwargs={'pk': user_obj.pk}))
+
+        # Criteria met. Lets delete the user.
+        user_obj.delete()
+        # redirect to Home Page.
+        return HttpResponseRedirect(reverse('home'))
+
+
+class ChangePasswordView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """ Using this view, the user can change his password. Since a user has to login to
+    access this view and until we have a Forgot password flow, we will allow the Org admin
+    to access this view and change the password.
+    In summary, the user and the org admin can change the password of the user.
+    TODO: Revise this workflow in future.
+    Also since we are allowing the admin to change the password, we are using the
+    SetPasswordForm instead of PasswordResetForm which asks for the current password.
+    """
+
+    def get(self, request, *args, pk, **kwargs):
+        user = self.get_object()
+        form = SetPasswordForm(user)
+        return render(request, 'Users/change_password.html', {'form': form})
+
+    def get_object(self):
+        if 'pk' not in self.kwargs.keys():
+            logger.error("pk not present. Cannot fetch User object. Returning None")
+            return None
+
+        return get_object_or_404(User, id=self.kwargs['pk'])
+
+    def post(self, request, *args, pk, **kwargs):
+        user = self.get_object()
+        form = SetPasswordForm(user, request.POST)  # TODO: Change to PasswordChangeForm when user whats to change.
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important!
+            messages.success(request, 'Password was successfully updated!')
+            return redirect('change-password', pk)
+        else:
+            messages.error(request, 'Please correct the error below.')
+            return render(request, 'Users/change_password.html', {'form': form})
+
+    def test_func(self):
+        user = self.get_object()
+        # Only 2 people should be allowed to change password the user and the org admin if
+        # the user belongs to an Org.
+        # TODO: Move this to a separate Mixin in future.
+        if self.request.user == user:
+            logger.debug("User %s given access to change-password of self" %
+                         user.get_name())
+            return True
+        elif user.org is not None and user.org.admin == self.request.user:
+            logger.debug("Admin %s(%s) given access to change-password of user belonging"
+                         " to same org" % (user.org.admin.get_name(), user.org.get_name())
+                         )
+            return True
+        else:
+            logger.debug("User %s(%s) denied access to change-password of %s(%s)" % (
+                         self.request.user.get_name(), self.request.user.org,
+                         user.get_name(), user.org))
+            return False

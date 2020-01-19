@@ -321,7 +321,8 @@ def OrgJoinViewOld(request, pk, OrgName, *args, **kwargs): # Moved to OrgJoinVie
         # This way we will prevent random ppl from joining the org even when the link leaks
         # outside an Org.
         if not orgObj.is_email_allowed(loggedInUser.email):
-            logger.error("User %s was NOT allowed to join Org %s."%(loggedInUser.get_email(),OrgName))
+            logger.error("User %s was NOT allowed to join Org %s." %
+                         (loggedInUser.get_email(), OrgName))
             return HttpResponseForbidden("You do not have permission to join this Organization")
 
         if loggedInUser.org is None:
@@ -336,10 +337,10 @@ def OrgJoinViewOld(request, pk, OrgName, *args, **kwargs): # Moved to OrgJoinVie
                 (loggedInUser.name, loggedInUser.org.org_name))  # TODO: Change to template.
         elif loggedInUser.org is not None and loggedInUser.org == orgObj:
             return HttpResponse("User %s already part of org %s" %
-                (loggedInUser.name, loggedInUser.org.org_name))  # TODO: Change to template.
+                                (loggedInUser.name, loggedInUser.org.org_name))  # TODO: Change to template.
         else:  # User part of a different Org. As of now only one Org allowed.
             return HttpResponse("User %s already part of a different Org %s. Exit that org to join a new one." %
-                (loggedInUser.name, loggedInUser.org.org_name))
+                                (loggedInUser.name, loggedInUser.org.org_name))
 
 
 class OrgJoinView(LoginRequiredMixin, View):
