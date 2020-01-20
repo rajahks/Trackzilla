@@ -28,6 +28,8 @@ from django.core import mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.mail import EmailMessage
+from django.conf import settings
+from django.contrib.sites.models import Site
 
 # imports required for acknowledge and deny views
 from django.http import HttpResponseForbidden, Http404
@@ -261,17 +263,17 @@ class ResourceUpdateView(LoginRequiredMixin, UserHasAccessToResourceMixin, View)
                 deny_url = self.request.build_absolute_uri(resource_obj.get_deny_url())
 
                 # TODO: The from_email should ideally be read from common settings.
-                ret = sendAssignmentMail( from_email = 'no-reply<no-reply@trackzilla.com',
+                ret = sendAssignmentMail(from_email=settings.EMAIL_FROM_ADDRESS,
                         to_email=resource_obj.current_user.email,
                         cur_user=resource_obj.current_user.get_username(),
                         prev_user=resource_obj.previous_user.get_username(),
-                        device_name=resource_obj.name, ack_link = ack_url,
-                        decline_link = deny_url)
+                        device_name=resource_obj.name, ack_link=ack_url,
+                        decline_link=deny_url)
 
                 if ret == 0:
-                    #Sending the email failed. Log an error
+                    # Sending the email failed. Log an error
                     logger.error("Sending an assignment email failed. Device:%s cur_user:%s cur_user_email:%s prev_user:%s"
-                        %(resource_obj.name, resource_obj.current_user.get_name(),
+                        % (resource_obj.name, resource_obj.current_user.get_name(),
                           resource_obj.current_user.get_email(),
                           resource_obj.previous_user.get_name()))
 
@@ -452,9 +454,9 @@ def denyResource(request, pk):
         url = request.build_absolute_uri(resBeingDenied.get_absolute_url())
         res = resBeingDenied
         # TODO: the from_email to be read from common settings.
-        ret = sendDisputeMail( from_email = 'no-reply<no-reply@trackzilla.com',
-                to_email_list=[ res.previous_user.email, res.current_user.email,
-                res.device_admin.email ],
+        ret = sendDisputeMail(from_email=settings.EMAIL_FROM_ADDRESS,
+                to_email_list=[res.previous_user.email, res.current_user.email,
+                res.device_admin.email],
                 cur_user=res.current_user.get_username(), prev_user=res.previous_user.get_username(),
                 device_admin=res.device_admin.get_username(),
                 device_name=res.name, device_url=url)
@@ -475,3 +477,44 @@ def denyResource(request, pk):
     # Return a warning message that the resource is now in Disputed state.
     return render(request, template_name='Resource/deny.html', context=context )
 
+
+def send_summary_email(user):
+    """Function when called sends a summary report to the user by email.
+    The summary email will contain the following data:
+        1) Resources in dispute with Resource Ack link.
+        2) Resources being managed which are in Dsipute.
+        3) Resources needing action ( To be ack'd or denied ) with Ack & Deny links.
+        2) Resources in use - With reassign button which would lead to the Resource update page.
+        4) Home page Button - Button with link to home page for performing other actions.
+
+    """
+    res_in_dispute = user.res_being_used.filter(status=Resource.RES_DISPUTE)
+    res_needing_action = user.res_being_used.filter(status=Resource.RES_ASSIGNED)
+    res_in_use = user.res_being_used.filter(status=Resource.RES_ACKNOWLEDGED)
+    res_managed_in_dispute = user.res_being_managed.filter(
+        status=Resource.RES_DISPUTE)
+    current_site = Site.objects.get_current()
+    domain_url = "http://%s" % (current_site.domain,)
+    subject = "Device Summary"
+    from_email = settings.EMAIL_FROM_ADDRESS
+    to_email = user.get_email()
+
+    context = {'res_in_dispute': res_in_dispute,
+                'res_needing_action': res_needing_action,
+                'res_in_use': res_in_use,
+                'res_managed_in_dispute': res_managed_in_dispute,
+                'current_site': current_site,
+                'domain_url': domain_url,
+                'user': user}
+
+    html_message = render_to_string('mail/summary.html', context)
+    plain_message = strip_tags(html_message)
+
+    ret = mail.send_mail(subject, plain_message, from_email, [to_email],
+                         html_message=html_message)
+    # If the above mail is causing issues, use the below to send html only email
+    # hmsg = EmailMessage(subject, html_message, from_email, [to])
+    # hmsg.content_subtype = "html"  # Main content is now text/html
+    # ret = hmsg.send()
+
+    return ret
