@@ -44,6 +44,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Get the current custom User Model.
+User = get_user_model()
+
 
 def resources_list(request):
     context = {
@@ -499,6 +502,12 @@ def send_summary_email(user):
     from_email = settings.EMAIL_FROM_ADDRESS
     to_email = user.get_email()
 
+    # We do not need to send an email if the user has no resources in his name or has to
+    # take any action.
+    if (len(res_in_dispute) == 0 and len(res_needing_action) == 0 and
+            len(res_in_use) == 0 and len(res_managed_in_dispute) == 0):
+        return -1
+
     context = {'res_in_dispute': res_in_dispute,
                 'res_needing_action': res_needing_action,
                 'res_in_use': res_in_use,
@@ -512,9 +521,37 @@ def send_summary_email(user):
 
     ret = mail.send_mail(subject, plain_message, from_email, [to_email],
                          html_message=html_message)
+
+    if ret == 0:
+        logger.error("Sending email failed for user %s" % (user.get_email()))
+
     # If the above mail is causing issues, use the below to send html only email
     # hmsg = EmailMessage(subject, html_message, from_email, [to])
     # hmsg.content_subtype = "html"  # Main content is now text/html
     # ret = hmsg.send()
 
     return ret
+
+
+def send_summary_email_for_all():
+    """Helper API to trigger sending 'send_summary_email' for each user.
+    We should trigger this from a cron job.
+    """
+    # Variables to keep track of how many emails were sent, skipped and failed.
+    emailSentCount: int = 0
+    emailSkippedCount: int = 0
+    emailFailedCount: int = 0
+
+    for user in User.objects.all():  # User = get_user_model()
+        result = send_summary_email(user)
+        # Update the counter variables
+        if result == 1:
+            emailSentCount += 1
+        elif result == 0:
+            emailFailedCount += 1
+        else:  # result == -1
+            emailSkippedCount += 1
+
+    logger.info("Summary Email sent for all users. Total_users:(%d) Emails_sent:(%d)"
+        " Emails_skipped:(%d) Emails_failed:(%d)" % (User.objects.count(), emailSentCount,
+        emailSkippedCount, emailFailedCount))
