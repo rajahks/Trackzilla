@@ -1,0 +1,140 @@
+{% load inlinecss %}
+{% inlinecss "mail/styles.css" %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="viewport" content="width=device-width" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Device Assigned</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/EmailMessage">
+
+<table class="body-wrap">
+  <tr>
+    <td></td>
+    <td class="container" width="600">
+      <div class="content">
+        <table class="main" width="100%" cellpadding="0" cellspacing="0" itemprop="action" itemscope itemtype="http://schema.org/ConfirmAction">
+          <tr>
+            <td class="content-wrap">
+              <meta itemprop="name" content="Summary Email"/>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="content-block">
+                    Hey <strong>{{ user.get_name }}, </strong>
+                    device summary for you is as follows: <br/>
+                  </td>
+                </tr>
+
+                {% if res_in_dispute %}
+                <tr>
+                  <td class="content-block">
+                    <strong>Resources in dispute:</strong>
+                    <table class="table" width="100%" cellpadding="0" cellspacing="0">
+                      {% for res in res_in_dispute %}
+                        <tr>
+                          <td>
+                            <a href="{{domain_url}}{{res.get_absolute_url}}" itemprop="url">{{res.get_name}}</a>
+                          </td>
+                          <td style='text-align:right'>
+                            <a href="{{domain_url}}{{res.get_acknowledge_url}}" class="btn btn-primary" itemprop="url">Ack&nbsp;</a>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+                {% if res_managed_in_dispute %}
+                <tr>
+                  <td class="content-block">
+                    <strong>Following Resources you manage are in dispute:</strong>
+                    <table class="table" width="100%" cellpadding="0" cellspacing="0">
+                      <thead>
+                        <td>Name</td>
+                        <td>Cur User</td>
+                        <td>Prev User</td>
+                      </thead>
+                      {% for res in res_managed_in_dispute %}
+                        <tr>
+                          <td>
+                            <a href="{{domain_url}}{{res.get_absolute_url}}" itemprop="url">{{res.get_name}}</a>
+                          </td>
+                          <td align="right">
+                            <a href="{{domain_url}}{{res.current_user.get_absolute_url}}" itemprop="url">{{res.current_user.get_email}}</a>
+                          </td>
+                          {% if res.previous_user %}
+                          <td align="right">
+                            <a href="{{domain_url}}{{res.previous_user.get_absolute_url}}" itemprop="url">{{res.previous_user.get_email}}</a>
+                          </td>
+                          {% endif %}
+                        </tr>
+                      {% endfor %}
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+                {% if res_needing_action %}
+                <tr>
+                  <td class="content-block">
+                    <strong>Resources needing action:</strong>
+                    <table class="table" width="100%" cellpadding="0" cellspacing="0">
+                      {% for res in res_needing_action %}
+                        <tr>
+                          <td>
+                            <a href="{{domain_url}}{{res.get_absolute_url}}" itemprop="url">{{res.get_name}}</a>
+                          </td>
+                          <td style='text-align:right'>
+                            <a href="{{domain_url}}{{res.get_acknowledge_url}}" class="btn btn-primary" itemprop="url">Ack&nbsp;</a>
+                            <a href="{{domain_url}}{{res.get_deny_url}}" class="btn btn-primary" itemprop="url">Deny</a>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+                {% if res_in_use %}
+                <tr>
+                  <td class="content-block">
+                    <strong>Resources you are using:</strong>
+                    <table class="table" width="100%" cellpadding="0" cellspacing="0">
+                      {% for res in res_in_use %}
+                        <tr>
+                          <td>
+                            <a href="{{domain_url}}{{res.get_absolute_url}}" itemprop="url">{{res.get_name}}</a>
+                          </td>
+                          <td style='text-align:right'>
+                            <a href="{{domain_url}}{% url 'Resource:resource-update' res.pk %}" class="btn btn-primary" itemprop="url">Re-assign</a>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+                <tr>
+                  <td class="content-block">
+                    &mdash;<a href="{{domain_url}}" itemprop="url">Trackzilla</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        </div>
+    </td>
+    <td></td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+{% endinlinecss %}

@@ -218,15 +218,15 @@ LOGGING = {
 # OUR_EMAIL_BACKEND = "smtp"
 OUR_EMAIL_BACKEND = "naomi"
 
-if OUR_EMAIL_BACKEND is "console":
+if OUR_EMAIL_BACKEND == "console":
     # Console backend - Enable this during development so that the email is written to the console.
     print("EMAIL_BACKEND = Console")
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-elif OUR_EMAIL_BACKEND is "naomi":
+elif OUR_EMAIL_BACKEND == "naomi":
     print("EMAIL_BACKEND = naomi")
     EMAIL_BACKEND = "naomi.mail.backends.naomi.NaomiBackend"
     EMAIL_FILE_PATH = "/code/tmp"
-elif OUR_EMAIL_BACKEND is "smtp":
+elif OUR_EMAIL_BACKEND == "smtp":
     # SMTP backend
     print("EMAIL_BACKEND = SMTP")
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -239,6 +239,9 @@ elif OUR_EMAIL_BACKEND is "smtp":
     EMAIL_USE_TLS = True
 else:
     print("EMAIL_BACKEND = None")
+
+# Email address mentioned in 'From' when mails are sent.
+EMAIL_FROM_ADDRESS = 'no-reply<no-reply@trackzilla.in'
 
 ######################################################################################
 # Configure Search
