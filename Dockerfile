@@ -12,7 +12,8 @@ WORKDIR /code
 # Run update and install all the requirements.
 # install psycopg2 dependencies.
 RUN apt-get update \
-    && apt-get install -y postgresql postgresql-client
+    && apt-get install -y postgresql postgresql-client \
+    && apt-get install -y netcat
 
 # Install packages from requirements.txt
 COPY requirements.txt /code/

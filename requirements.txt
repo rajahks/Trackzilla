@@ -18,3 +18,4 @@ django-inlinecss
 #Below required only for development. Maybe move it to a separate file
 ipython
 pylint
+flake8

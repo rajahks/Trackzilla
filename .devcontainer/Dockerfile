@@ -14,7 +14,8 @@ ENV SHELL /bin/bash
 # Run update and install all the requirements.
 # install psycopg2 dependencies.
 RUN apt-get update \
-    && apt-get install -y postgresql postgresql-client
+    && apt-get install -y postgresql postgresql-client \
+    && apt-get install -y netcat
 
 COPY requirements.txt /code/
 RUN pip install --upgrade pip
