@@ -1,7 +1,7 @@
 version: '3'
 services:
         app:
-                build: 
+                build:
                         context: . # Build using the Dockerfile present in the current dir
                         args:
                                 UID: $USERID
@@ -15,6 +15,7 @@ services:
                         - "8000:8000"
                 depends_on:
                         - elasticsearch
+                        - db
                 #user: "${USERID}:${GROUPID}"  # Simpler alternative to useradd defined in Dockerfile.
                 command: bash docker-entrypoint.sh #Run the startupscript which will make the migrations and run the dev server
 
@@ -26,8 +27,20 @@ services:
                 volumes:
                         - esdata:/usr/share/elasticsearch/data
 
+        db:
+                image: postgres
+                restart: always
+                env_file:
+                        - .env
+                environment:
+                        - POSTGRES_USER=${SQL_USER}
+                        - POSTGRES_PASSWORD=${SQL_PASSWORD}
+                        - POSTGRES_DB=${SQL_DATABASE}
+                volumes:
+                        - ./postgres-data:/var/lib/postgresql/data
+                ports:
+                        - 5432:5432
 volumes:
   esdata:
-    driver: local     
+    driver: local
 
-                

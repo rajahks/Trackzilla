@@ -9,7 +9,14 @@ RUN mkdir /code
 # Set work directory
 WORKDIR /code
 
+# Run update and install all the requirements.
+# install psycopg2 dependencies.
+RUN apt-get update \
+    && apt-get install -y postgresql postgresql-client
+
+# Install packages from requirements.txt
 COPY requirements.txt /code/
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 COPY . /code/
 

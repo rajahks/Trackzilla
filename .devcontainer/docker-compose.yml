@@ -1,7 +1,7 @@
 version: '3'
 services:
         app:
-                build: 
+                build:
                         context: .. # Set the context as parent dir. Set all settings from parent dir
                         args:
                                 USER_UID: $USERID
@@ -16,7 +16,8 @@ services:
                 command: sleep infinity  # donot launch anything as we will want to launch the debugger.
                 depends_on:
                         - elasticsearch
-                        
+                        - db
+
         elasticsearch:
                 image: launcher.gcr.io/google/elasticsearch2
                 ports:
@@ -25,7 +26,20 @@ services:
                 volumes:
                         - esdata:/usr/share/elasticsearch/data
 
+        db:
+                image: postgres
+                restart: always
+                env_file:
+                        - ../.env
+                environment:
+                        - POSTGRES_USER=${SQL_USER}
+                        - POSTGRES_PASSWORD=${SQL_PASSWORD}
+                        - POSTGRES_DB=${SQL_DATABASE}
+                volumes:
+                        - ../postgres-data:/var/lib/postgresql/data
+                ports:
+                        - 5432:5432
 volumes:
   esdata:
-    driver: local 
-                
+    driver: local
+

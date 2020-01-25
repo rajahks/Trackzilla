@@ -11,9 +11,13 @@ WORKDIR /code
 
 ENV SHELL /bin/bash
 
-COPY requirements.txt /code/
 # Run update and install all the requirements.
-RUN apt-get update
+# install psycopg2 dependencies.
+RUN apt-get update \
+    && apt-get install -y postgresql postgresql-client
+
+COPY requirements.txt /code/
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Copy all our code into /code folder.
