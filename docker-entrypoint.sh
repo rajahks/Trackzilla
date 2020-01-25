@@ -42,4 +42,5 @@ python manage.py rebuild_index --noinput
 
 # Start server
 echo "Starting server"
-python manage.py runserver 0.0.0.0:8000
+# python manage.py runserver 0.0.0.0:8000
+gunicorn asseto.wsgi:application --bind 0.0.0.0:8000

@@ -11,6 +11,9 @@ simplejson>=3.16.0,<4.0.0
 # Packages required for Postgres DB
 psycopg2-binary==2.8.4
 
+# Gunicorn
+gunicorn==20.0.4
+
 # Packages required for email
 django-naomi
 django-inlinecss
