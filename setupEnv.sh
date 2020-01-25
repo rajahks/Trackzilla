@@ -18,10 +18,20 @@ echo "SECRET_KEY=foo" >> .env
 
 echo "DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]" >> .env
 
+DATABASE=postgres
+# DATABASE="sqllite"
+
 # Database settings
-echo "SQL_ENGINE=django.db.backends.postgresql" >> .env
-echo "SQL_DATABASE=trackzilla" >> .env
-echo "SQL_USER=trackzilla" >> .env
-echo "SQL_PASSWORD=trackzilla" >> .env
-echo "SQL_HOST=db" >> .env
-echo "SQL_PORT=5432" >> .env
+if [ $DATABASE = "postgres" ]
+then
+    echo "DATABASE=postgres" >> .env
+    echo "SQL_ENGINE=django.db.backends.postgresql" >> .env
+    echo "SQL_DATABASE=trackzilla" >> .env
+    echo "SQL_USER=trackzilla" >> .env
+    echo "SQL_PASSWORD=trackzilla" >> .env
+    echo "SQL_HOST=db" >> .env
+    echo "SQL_PORT=5432" >> .env
+else
+    # Other values will be picked up as defaults in settings.py
+    echo "DATABASE=sqllite" >> .env
+fi
