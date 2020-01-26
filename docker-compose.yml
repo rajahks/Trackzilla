@@ -9,10 +9,13 @@ services:
                                 #user: $USER
                 volumes:
                         - .:/code
+                        - ./static:/code/static
                 env_file:
                         - .env   # run ./setupEnv.sh so that above args are picked up. 
-                ports:
-                        - "8000:8000"
+                # ports:
+                #         - "8000:8000"
+                expose:   # Using expose instead of ports so that the port 8000 is only exposed internally to other containers.
+                        - 8000
                 depends_on:
                         - elasticsearch
                         - db
@@ -40,6 +43,15 @@ services:
                         - ./postgres-data:/var/lib/postgresql/data
                 ports:
                         - 5432:5432
+        nginx:
+                build: ./nginx
+                ports:
+                        - "80:80"
+                depends_on:
+                        - app
+                volumes:
+                        # The files in static folder will show up at /trackzilla/static
+                        - ./static:/trackzilla/static
 volumes:
   esdata:
     driver: local
