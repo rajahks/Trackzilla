@@ -97,7 +97,10 @@ class ResourceSearchView(LoginRequiredMixin, SearchView):
         # integer attribute in each record. Filter the results using that.
         # This is very important else people from different orgs will be shown resources
         # not in their org.
-        queryset = SearchQuerySet().filter(org_id=cur_user_org.id)
+        if cur_user_org is None:
+            queryset = SearchQuerySet().none()
+        else:
+            queryset = SearchQuerySet().filter(org_id=cur_user_org.id)
         return queryset
 
 
@@ -114,7 +117,12 @@ def autocomplete(request):
                   would match the user's input. List set against a key 'suggestions'
     """
     cur_user_org = get_current_org()
-    sqs_org = SearchQuerySet().filter(org_id=cur_user_org.id)
+
+    if cur_user_org is None:
+        sqs_org = SearchQuerySet().none()
+    else:
+        sqs_org = SearchQuerySet().filter(org_id=cur_user_org.id)
+
     sqs = sqs_org.autocomplete(device_name_auto=request.GET.get('query', ''))
     # TODO: [:5] at the end of the above sqs statement to display only top 5
     suggestions = [result.object.name for result in sqs]
