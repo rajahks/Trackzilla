@@ -1,0 +1,4 @@
+# This is the folder into which django's collectstatic command will copy all the static
+# files from all the apps. This folder is shared with nginx as a docker volume and the
+# nginx server serves the files from this folder.
+# Creating the dir as per https://devcenter.heroku.com/articles/django-assets

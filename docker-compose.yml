@@ -9,7 +9,7 @@ services:
                                 #user: $USER
                 volumes:
                         - .:/code
-                        - ./static:/code/static
+                        - ./staticfiles:/code/staticfiles
                 env_file:
                         - .env   # run ./setupEnv.sh so that above args are picked up. 
                 # ports:
@@ -51,7 +51,7 @@ services:
                         - app
                 volumes:
                         # The files in static folder will show up at /trackzilla/static
-                        - ./static:/trackzilla/static
+                        - ./staticfiles:/trackzilla/staticfiles
 volumes:
   esdata:
     driver: local
