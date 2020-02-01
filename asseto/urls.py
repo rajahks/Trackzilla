@@ -33,4 +33,5 @@ urlpatterns = [
     path('search/autocomplete/', autocomplete, name='autocomplete'),
     # path('search/', include('haystack.urls')), #TODO: Remove once the above search view is stable
     path('', include('apps.Organization.urls')),
+    path('select2/', include('django_select2.urls')),
 ]

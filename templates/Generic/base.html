@@ -14,6 +14,10 @@
     <!-- <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous"> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css" integrity="sha256-46qynGAkLSFpVbEBog43gvNhfrOj+BmwXdxFgVK/Kvc=" crossorigin="anonymous" />
     <title>Trackzilla</title>
+
+    {% block head %}
+    {% endblock head %}
+
 </head>
 <body id="page-top">
 <header class="site-header">
@@ -105,6 +109,8 @@
 <script src="{% static 'search/jquery.autocomplete.js' %}"></script>
 <script src="{% static 'search/search_autocomplete.js' %}"></script>
 
+{% block script %}
+{% endblock script %}
 
 </body>
 </html>
