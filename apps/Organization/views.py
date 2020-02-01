@@ -17,10 +17,12 @@ from django.urls import reverse
 from apps.Users.mixin import UserHasAccessToTeamMixin, UserCanModifyTeamMixin
 from apps.Users.mixin import UserHasAccessToOrgMixin, UserCanDeleteOrgMixin
 from django.utils.text import slugify
+from django_select2.forms import Select2MultipleWidget
 
 # configure Logger
 import logging
 logger = logging.getLogger(__name__)
+
 
 def teams_list(request):
     context = {
@@ -466,9 +468,9 @@ class TeamCreateView(LoginRequiredMixin, CreateView):
     def get_form(self):
         form = super(TeamCreateView, self).get_form()
         cur_user_org = get_current_org()
-        # form.fields['team_members'].widget = CheckboxSelectMultiple()
+        form.fields['team_members'].widget = Select2MultipleWidget()
         form.fields['team_members'].queryset = cur_user_org.user_set.all()
-        # form.fields['team_admins'].widget = CheckboxSelectMultiple()
+        form.fields['team_admins'].widget = Select2MultipleWidget()
         form.fields['team_admins'].queryset = cur_user_org.user_set.all()
         # exclude the current team from this list
         form.fields['parent_team'].queryset = cur_user_org.team_set.all()
@@ -498,9 +500,9 @@ class TeamUpdateView(LoginRequiredMixin, UserCanModifyTeamMixin, UpdateView):
         form = super(TeamUpdateView, self).get_form()
         cur_user_org = get_current_org()
         team_obj = self.get_object()
-        # form.fields['team_members'].widget = CheckboxSelectMultiple()
+        form.fields['team_members'].widget = Select2MultipleWidget()
         form.fields['team_members'].queryset = cur_user_org.user_set.all()
-        # form.fields['team_admins'].widget = CheckboxSelectMultiple()
+        form.fields['team_admins'].widget = Select2MultipleWidget()
         form.fields['team_admins'].queryset = cur_user_org.user_set.all()
         # exclude the current team from this list
         # TODO: Extend this to exclude all child teams(including grand child teams) as well.
