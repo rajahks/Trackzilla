@@ -1,6 +1,6 @@
 {% extends "Generic/base.html" %}
+{% load static %}
 {% block content %}
-
 <h2><i class="fas fa-sitemap"></i> {{Org.org_name}}</h2>
 <br><br>
 <div class="card">
@@ -125,7 +125,8 @@
                 value="{% if request.is_secure %}https://{% else %}http://{% endif %}{{ request.get_host }}{{ Org.get_join_link }}"
                 id="copyUrl" readonly> </input>
               <div class="input-group-append">
-                <button class="btn btn-outline-secondary" type="button">Copy</button>
+                <button class="btn btn-outline-secondary" id="copyBtn"
+                  data-clipboard-target="#copyUrl" type="button">Copy</button>
               </div>
             </div>
 
@@ -175,3 +176,22 @@
 </div>
 
 {% endblock content %}
+
+{% block script %}
+  <script src="{% static 'clipboard/clipboard.min.js' %}"></script>
+  <script>
+    var clipboard = new ClipboardJS('#copyBtn');
+    clipboard.on('success', function(e) {
+      console.log('Copied text:'+ e.text);
+      $('#copyBtn').html("Copied!")
+
+      window.setTimeout(function(){
+        $('#copyBtn').html("Copy")
+        console.log('Copy Btn text reset');
+        }, 800);
+    });
+    clipboard.on('error', function(e) {
+        console.log(e);
+    });
+  </script>
+  {% endblock script%}

@@ -1,4 +1,6 @@
 {% extends "Generic/base.html" %}
+{% load static %}
+
 {% block content %}
 <div class="container">
     <div class="row">
@@ -20,7 +22,8 @@
                 value="{% if request.is_secure %}https://{% else %}http://{% endif %}{{ request.get_host }}{{ org.get_join_link }}"
                 id="copyUrl" readonly> </input>
               <div class="input-group-append">
-                <button class="btn btn-outline-secondary" type="button">Copy</button>
+                <button class="btn btn-outline-secondary" id="copyBtn" type="button"
+                  data-clipboard-target="#copyUrl">Copy</button>
               </div>
             </div>
             <p><strong>Note:</strong> This link can later be found under the Settings tab of the Org page</p>
@@ -33,3 +36,23 @@
     </div>
   </div>
   {% endblock content %}
+
+
+  {% block script %}
+  <script src="{% static 'clipboard/clipboard.min.js' %}"></script>
+  <script>
+    var clipboard = new ClipboardJS('#copyBtn');
+    clipboard.on('success', function(e) {
+      console.log('Copied text:'+ e.text);
+      $('#copyBtn').html("Copied!")
+
+      window.setTimeout(function(){
+        $('#copyBtn').html("Copy")
+        console.log('Copy Btn text reset');
+        }, 800);
+    });
+    clipboard.on('error', function(e) {
+        console.log(e);
+    });
+  </script>
+  {% endblock script %}
