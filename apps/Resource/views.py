@@ -458,35 +458,49 @@ def denyResource(request, pk):
     if resBeingDenied.status != Resource.RES_DISPUTE:
         resBeingDenied.status = Resource.RES_DISPUTE
         resBeingDenied.save()
-        logger.info('Device %s disputed by user %s'% (resBeingDenied.name,
+        logger.info('Device %s disputed by user %s' % (resBeingDenied.name,
             loggedInUser.get_username()))
         # Trigger an email to inform users about the dispute.
         # Email to be sent to Current_user, prev_user and device_admin.
         url = request.build_absolute_uri(resBeingDenied.get_absolute_url())
         res = resBeingDenied
-        # TODO: the from_email to be read from common settings.
+
+        to_email_list = [res.current_user.email, res.device_admin.email]
+        if res.previous_user is not None:
+            to_email_list.append(res.previous_user.email)
+            prev_user_uname = res.previous_user.get_username()
+        else:
+            # When the resource is created and assigned to a user, previous_user is None
+            # as the resource is not yet reassigned.
+            # Show as "None" in such a case.
+            prev_user_uname = 'None'
+
         ret = sendDisputeMail(from_email=settings.EMAIL_FROM_ADDRESS,
-                to_email_list=[res.previous_user.email, res.current_user.email,
-                res.device_admin.email],
-                cur_user=res.current_user.get_username(), prev_user=res.previous_user.get_username(),
+                to_email_list=to_email_list,
+                cur_user=res.current_user.get_username(),
+                prev_user=prev_user_uname,
                 device_admin=res.device_admin.get_username(),
                 device_name=res.name, device_url=url)
         if ret == 0:
             logger.error("Failed to send email for device dispute. Device:%s cur_user:%s prev_user:%s"%
-                (res.name, res.current_user.get_username(), res.previous_user.get_username() ))
+                (res.name, res.current_user.get_username(), prev_user_uname))
     else:
-        logger.info('Device %s already in Disputed state. user %s'% (resBeingDenied.name, loggedInUser.get_username()))
+        logger.info('Device %s already in Disputed state. user %s' % (resBeingDenied.name,
+            loggedInUser.get_username()))
 
-    context = { 'cur_user': resBeingDenied.current_user.get_username(),
-                'prev_user': resBeingDenied.previous_user.get_username(),
-                'device_name': resBeingDenied.name,
-                'device_admin' : resBeingDenied.device_admin.get_username(),
-              }
+    context = {'cur_user': resBeingDenied.current_user.get_username(),
+               'prev_user': prev_user_uname,
+               'device_name': resBeingDenied.name,
+               'device_admin': resBeingDenied.device_admin.get_username(), }
+
               # TODO: previous_user maybe None if this device was never assigned and the
               # deny url is hit for the device. Handle it.
+              # UPDATE: This has been mostly handled by checking if prev_user is None and
+              # only then accessing the username and email. Showing username as "None" if
+              # previous_user in None.
 
     # Return a warning message that the resource is now in Disputed state.
-    return render(request, template_name='Resource/deny.html', context=context )
+    return render(request, template_name='Resource/deny.html', context=context)
 
 
 def send_summary_email(user):
