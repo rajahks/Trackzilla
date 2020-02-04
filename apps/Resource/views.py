@@ -454,7 +454,7 @@ def denyResource(request, pk):
         return HttpResponseForbidden("<h3> Http 403: Trying to ack a resource which you do not own!! </h3>")
         # TODO: Use a better template for the above message.
 
-    # Check the status and ack it it not ackd already.
+    # Check the status and dispute it it not disputed already.
     if resBeingDenied.status != Resource.RES_DISPUTE:
         resBeingDenied.status = Resource.RES_DISPUTE
         resBeingDenied.save()
@@ -487,6 +487,13 @@ def denyResource(request, pk):
     else:
         logger.info('Device %s already in Disputed state. user %s' % (resBeingDenied.name,
             loggedInUser.get_username()))
+
+    # In case we try to Deny a device already in Disputed state, prev_user_uname is
+    # unassigned. Assign the variable here
+    if resBeingDenied.previous_user:
+        prev_user_uname = resBeingDenied.previous_user.get_username()
+    else:
+        prev_user_uname = "None"
 
     context = {'cur_user': resBeingDenied.current_user.get_username(),
                'prev_user': prev_user_uname,
