@@ -237,7 +237,8 @@ LOGGING = {
 # Uncomment the required backend.
 # OUR_EMAIL_BACKEND = "console"
 # OUR_EMAIL_BACKEND = "smtp"
-OUR_EMAIL_BACKEND = "naomi"
+# OUR_EMAIL_BACKEND = "naomi"
+OUR_EMAIL_BACKEND = os.getenv('OUR_EMAIL_BACKEND', default="naomi")
 
 if OUR_EMAIL_BACKEND == "console":
     # Console backend - Enable this during development so that the email is written to the console.
@@ -251,13 +252,11 @@ elif OUR_EMAIL_BACKEND == "smtp":
     # SMTP backend
     print("EMAIL_BACKEND = SMTP")
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_HOST_USER = 'apikey'
-    #SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
-    #EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
-    EMAIL_HOST_PASSWORD = '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' #TODO: Change this to read from env variable later.
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
+    EMAIL_HOST =  os.getenv('EMAIL_HOST')
+    EMAIL_HOST_USER =  os.getenv('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD =  os.getenv('EMAIL_HOST_PASSWORD')
+    EMAIL_PORT = os.getenv('EMAIL_PORT')
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
 else:
     print("EMAIL_BACKEND = None")
 
