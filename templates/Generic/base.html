@@ -30,7 +30,13 @@
                 <img src="{% static 'Generic/dino_white.png' %}" width="30" height="30" alt="">
                 Trackzilla
             </a>
-            <!--<div class="collapse navbar-collapse" id="navbarToggle"> -->
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
+                    aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarToggle">
 
             {% comment %}
             Uncomment this comment block to have a search form with search button in the
@@ -43,23 +49,20 @@
             </form>
             {% endcomment %}
 
-            <div class="navbar-nav">
-                {% if user.is_authenticated %}
-                <a href="{% url 'haystack_search' %}" class="nav-item nav-link"> <i class="fas fa-search"></i> Search</a>
-                <a class="nav-item nav-link" href="{% url 'logout' %}">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-                {% else %}
-                <a class="nav-item nav-link" href="{% url 'login' %}">
-                    <i class="fas fa-sign-in-alt"></i> Login</a>
-                <a class="nav-item nav-link" href="{% url 'register' %}">Sign Up</a>
-                {% endif %}
+                <div class="navbar-nav ml-auto">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'haystack_search' %}" class="nav-item nav-link"> <i class="fas fa-search"></i> Search</a>
+                    <a class="nav-item nav-link" href="{% url 'logout' %}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                    {% else %}
+                    <a class="nav-item nav-link" href="{% url 'login' %}">
+                        <i class="fas fa-sign-in-alt"></i> Login</a>
+                    <a class="nav-item nav-link" href="{% url 'register' %}">Sign Up</a>
+                    {% endif %}
+                </div>
             </div>
-            <!--</div>-->
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
-                    aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            
         </div>
     </nav>
     <!-- Nav bar ends -->
