@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'apps.Organization',
     'apps.Users',
     'crispy_forms',
-    'social_django',
+    # 'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -77,8 +77,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
+                #'social_django.context_processors.backends',
+                #'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -95,9 +95,9 @@ AUTH_USER_MODEL = 'Users.AssetUser'
 
 # authentication backends for single sign on using social profiles
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.open_id.OpenIdAuth',  # for Google authentication
-    'social_core.backends.google.GoogleOpenId',  # for Google authentication
-    'social_core.backends.google.GoogleOAuth2',  # for Google authentication
+#    'social_core.backends.open_id.OpenIdAuth',  # for Google authentication
+#    'social_core.backends.google.GoogleOpenId',  # for Google authentication
+#    'social_core.backends.google.GoogleOAuth2',  # for Google authentication
 
     'django.contrib.auth.backends.ModelBackend',
 )

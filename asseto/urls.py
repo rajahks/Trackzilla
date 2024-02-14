@@ -27,7 +27,7 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(redirect_authenticated_user=True,
         template_name='Users/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(template_name='Users/logout.html'), name='logout'),
-    path('auth/', include('social_django.urls', namespace='social')),
+    # path('auth/', include('social_django.urls', namespace='social')),
     path('resource/', include('apps.Resource.urls')),
     path('search/', ResourceSearchView.as_view(), name='haystack_search'),
     path('search/autocomplete/', autocomplete, name='autocomplete'),

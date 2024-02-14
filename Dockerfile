@@ -13,11 +13,12 @@ WORKDIR /code
 # install psycopg2 dependencies.
 RUN apt-get update \
     && apt-get install -y postgresql postgresql-client \
-    && apt-get install -y netcat
+    && apt-get install -y netcat-traditional
 
 # Install packages from requirements.txt
 COPY requirements.txt /code/
-RUN pip install --upgrade pip
+# RUN pip install --upgrade pip
+# RUN pip install --upgrade wheel
 RUN pip install -r requirements.txt
 COPY . /code/
 
